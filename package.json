@@ -1,0 +1,27 @@
+{
+  "name": "stacklens",
+  "version": "1.0.0",
+  "description": "See the developer behind the repositories.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iftakharH/stacklens.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/iftakharH/stacklens/issues"
+  },
+  "homepage": "https://github.com/iftakharH/stacklens#readme",
+  "dependencies": {
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

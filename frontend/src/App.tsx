@@ -63,7 +63,7 @@ type AnalysisState =
   | { status: 'error'; message: string }
   | { status: 'success'; data: { username: string; report: Report } };
 
-const BACKEND_URL = 'http://localhost:4000/api/analyze';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const scoreColor = (score: number) => {
   if (score >= 8) return 'text-emerald-400';

@@ -65,9 +65,12 @@ type AnalysisState =
 
 // Call a same-origin API route. In dev, Vite proxies `/api` to localhost backend.
 // In prod (Vercel), configure a rewrite from `/api/*` to your Render backend.
-const BACKEND_URL = '/api/analyze';
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL ??
+  (import.meta.env.DEV ? 'http://localhost:4000/api/analyze' : '/api/analyze');
 
-const scoreColor = (score: number) => {
+
+  const scoreColor = (score: number) => {
   if (score >= 8) return 'text-emerald-400';
   if (score >= 6) return 'text-amber-300';
   return 'text-rose-400';

@@ -5,10 +5,44 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
 app.use(express.json());
 
+// CORS: allow local dev + your deployed frontend(s).
+// Configure via env `ALLOWED_ORIGINS` (comma-separated). Example:
+// ALLOWED_ORIGINS=http://localhost:5173,https://stacklens-purple.vercel.app
+const defaultAllowed = new Set(["http://localhost:5173"]);
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+);
+for (const o of defaultAllowed) allowedOrigins.add(o);
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      // Allow non-browser requests (curl/postman) with no Origin header.
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.has(origin)) return cb(null, true);
+      return cb(new Error("CORS blocked"), false);
+    },
+  })
+);
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true });
+});
+
 const GH_BASE = "https://api.github.com";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
+
+function githubHeaders() {
+  const headers = { "User-Agent": "StackLens" };
+  // Optional: set a token on Render to increase rate limits. Never send this to the client.
+  if (GITHUB_TOKEN) headers.Authorization = `token ${GITHUB_TOKEN}`;
+  return headers;
+}
 
 function extractUsernameFromUrl(input) {
   if (!input) return null;
@@ -243,11 +277,11 @@ app.get("/api/analyze", async (req, res) => {
 
   try {
     const userResp = await axios.get(`${GH_BASE}/users/${username}`, {
-      headers: { "User-Agent": "StackLens" },
+      headers: githubHeaders(),
     });
 
     const reposResp = await axios.get(`${GH_BASE}/users/${username}/repos`, {
-      headers: { "User-Agent": "StackLens" },
+      headers: githubHeaders(),
       params: { per_page: 100, sort: "updated" },
     });
 
@@ -259,7 +293,16 @@ app.get("/api/analyze", async (req, res) => {
       return res.status(404).json({ error: "GitHub user not found." });
     }
 
-    console.error("GitHub API error", err.response?.status, err.message);
+    const status = err?.response?.status;
+    // Avoid logging headers/tokens; keep logs minimal.
+    console.error(`GitHub API error: ${status || "unknown"} ${err?.message || ""}`);
+
+    if (status === 403) {
+      return res.status(429).json({
+        error:
+          "GitHub API rate limit hit. Try again later (or configure a GitHub token on the backend).",
+      });
+    }
 
     res.status(500).json({
       error: "Failed to analyze profile. Please try again later.",

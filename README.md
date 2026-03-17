@@ -85,8 +85,46 @@ Open the URL shown (e.g. **http://localhost:5173**).
 
 ## Environment
 
-- **Backend:** optional `PORT` (default `4000`).
-- **Frontend:** expects the API at `http://localhost:4000`; change `BACKEND_URL` in `App.tsx` (or use env) for a different host.
+- **Backend:**
+  - `ALLOWED_ORIGINS`: comma-separated origins allowed by CORS (example in `.env.example`)
+  - `GITHUB_TOKEN` (optional): increases GitHub API rate limits (keep secret server-side)
+  - `PORT` (optional): default `4000` (Render sets `PORT` automatically)
+- **Frontend:**
+  - The frontend calls **`/api/analyze`** (same-origin).
+  - Dev: Vite proxies `/api/*` → `http://localhost:4000` (see `frontend/vite.config.ts`)
+  - Prod: Vercel rewrites `/api/*` → your Render backend (see `frontend/vercel.json`)
+
+---
+
+## Deploy
+
+### Deploy backend to Render (Web Service)
+
+- **Root directory**: `stacklens`
+- **Build command**: `npm install`
+- **Start command**: `node server.js`
+- **Environment variables** (Render → Environment):
+  - `ALLOWED_ORIGINS`: `https://<your-vercel-domain>` (and optionally `http://localhost:5173` for dev)
+  - `GITHUB_TOKEN`: *(optional, recommended)* a GitHub token to avoid rate limits
+
+Your backend will be reachable at something like:
+`https://<your-service>.onrender.com`
+
+### Deploy frontend to Vercel
+
+- **Root directory**: `stacklens/frontend`
+- Framework: Vite (auto-detected)
+- Build command: `npm run build`
+- Output directory: `dist`
+
+#### Important: API rewrite (CORS-safe)
+
+The frontend never calls Render deploy hooks or any secret URL from the browser.
+
+Instead it calls **`/api/analyze`**, and Vercel forwards it to Render using `frontend/vercel.json`.
+Update this file if your Render domain changes:
+
+- `frontend/vercel.json` rewrites `/api/*` → `https://<your-service>.onrender.com/api/*`
 
 ---
 

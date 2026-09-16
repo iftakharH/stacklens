@@ -5,7 +5,17 @@
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:e2e": "playwright test",
+    "test:watch": "vitest",
+    "migrate": "node db/migrate.js",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=20"
   },
   "repository": {
     "type": "git",
@@ -20,8 +30,25 @@
   },
   "homepage": "https://github.com/iftakharH/stacklens#readme",
   "dependencies": {
-    "axios": "^1.18.0",
+    "@sentry/node": "^10.74.0",
+    "@upstash/ratelimit": "^2.1.0",
+    "@upstash/redis": "^1.38.4",
+    "axios": "^1.13.6",
+    "better-auth": "^1.7.5",
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.12.0",
+    "supertest": "^7.2.2",
+    "vitest": "^5.0.1"
   }
 }

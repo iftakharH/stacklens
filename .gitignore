@@ -27,3 +27,6 @@ Thumbs.db
 *.sw?
 coverage/
 .nyc_output/
+
+.vercel
+.env*

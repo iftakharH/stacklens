@@ -2,13 +2,41 @@ import { expect, test } from '@playwright/test';
 import { attachErrorCollector, dbMode, stubAvatars } from './helpers';
 
 test.describe('analyze + share error states', () => {
-  test('manual analyze renders the full octocat report with zero console/page errors', async ({
+  test('landing page hero sends a visitor straight into a report', async ({
     page,
   }) => {
     const errors = attachErrorCollector(page);
     await stubAvatars(page);
 
     await page.goto('/');
+    // The landing page is its own document: hero claim + specimen fingerprint.
+    await expect(page.getByRole('heading', { name: 'Read the work' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'github.com/torvalds' })
+    ).toBeVisible();
+    await expect(page.getByText('C', { exact: true })).toBeVisible();
+    await expect(page.getByText('97.5%')).toBeVisible();
+
+    await page.getByLabel('GitHub profile URL or username').fill('octocat');
+    await page.getByRole('button', { name: 'Analyze', exact: true }).click();
+
+    // The offer is the product: the hero hands off to the analyzer.
+    await expect(page).toHaveURL(/\/analyze\?q=octocat$/);
+    await expect(page.getByText('Smart Summary')).toBeVisible();
+
+    expect(
+      errors.unexpectedConsoleErrors([{ urlFragment: 'api/auth/', status: 503 }])
+    ).toEqual([]);
+    expect(errors.pageErrors).toEqual([]);
+  });
+
+  test('manual analyze renders the full octocat report with zero console/page errors', async ({
+    page,
+  }) => {
+    const errors = attachErrorCollector(page);
+    await stubAvatars(page);
+
+    await page.goto('/analyze');
     await page.getByLabel('GitHub profile URL or username').fill('octocat');
     await page.getByRole('button', { name: 'Analyze Profile' }).click();
 
@@ -66,11 +94,11 @@ test.describe('analyze + share error states', () => {
     expect(errors.pageErrors).toEqual([]);
   });
 
-  test('/?q=octocat auto-runs the analysis', async ({ page }) => {
+  test('/analyze?q=octocat auto-runs the analysis', async ({ page }) => {
     const errors = attachErrorCollector(page);
     await stubAvatars(page);
 
-    await page.goto('/?q=octocat');
+    await page.goto('/analyze?q=octocat');
 
     // Input prefilled from the URL, report renders without clicking anything.
     await expect(page.getByLabel('GitHub profile URL or username')).toHaveValue(

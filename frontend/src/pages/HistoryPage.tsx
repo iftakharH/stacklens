@@ -267,10 +267,10 @@ const HistoryPage = () => {
               automatically.
             </p>
             <Link
-              to="/"
+              to="/analyze"
               className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20 dark:border-primary-soft/40 dark:bg-primary-soft/10 dark:text-primary-soft dark:hover:bg-primary-soft/20"
             >
-              Analyze a profile →
+              Analyze a profile
             </Link>
           </div>
         </Card>

@@ -16,12 +16,12 @@ test('11th rapid analysis is rate limited with a visible countdown', async ({
   // 10 rapid navigations: each auto-runs an analysis against the mock and
   // renders the report.
   for (let i = 1; i <= 10; i += 1) {
-    await page.goto('/?q=octocat');
+    await page.goto('/analyze?q=octocat');
     await expect(page.getByText('Smart Summary')).toBeVisible();
   }
 
   // 11th: RATE_LIMITED ErrorCard with a visible countdown.
-  await page.goto('/?q=octocat');
+  await page.goto('/analyze?q=octocat');
   const alert = page.getByRole('alert');
   await expect(alert).toBeVisible();
   await expect(alert).toContainText('Too many requests');

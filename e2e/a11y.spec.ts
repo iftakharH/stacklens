@@ -12,10 +12,19 @@ test.describe('accessibility (axe)', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
   });
 
-  test('home page initial state has no serious/critical violations', async ({
+  test('landing page has no serious/critical violations', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Read the work' })).toBeVisible();
+
+    const results = await new AxeBuilder({ page }).analyze();
+    const bad = seriousOrCritical(results.violations);
+    expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
+  });
+
+  test('analyzer page initial state has no serious/critical violations', async ({
     page,
   }) => {
-    await page.goto('/');
+    await page.goto('/analyze');
     await expect(page.getByRole('button', { name: 'Analyze Profile' })).toBeVisible();
 
     const results = await new AxeBuilder({ page }).analyze();
@@ -27,7 +36,7 @@ test.describe('accessibility (axe)', () => {
     page,
   }) => {
     await stubAvatars(page);
-    await page.goto('/?q=octocat');
+    await page.goto('/analyze?q=octocat');
     // This is the suite's FIRST analysis against a possibly cold API pg pool
     // (fresh docker container on Windows can take >10s for the first
     // connect) — allow a one-time longer wait here.

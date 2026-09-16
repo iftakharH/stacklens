@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { authClient } from '../api/auth';
+import { useTheme } from '../lib/useTheme';
 import AuthControls from './AuthControls';
-
-const THEME_KEY = 'stacklens-theme';
 
 const ThemeToggle: React.FC<{ dark: boolean; onToggle: () => void }> = ({
   dark,
@@ -36,23 +34,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 // App shell: gradient background, header (logo / nav / auth / theme), and the
 // routed page below. Nav items only appear for signed-in users.
 const Layout = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'light' || stored === 'dark') return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
-      localStorage.setItem(THEME_KEY, 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem(THEME_KEY, 'light');
-    }
-  }, [darkMode]);
+  const { dark, toggle } = useTheme();
 
   const { data: session, isPending } = authClient.useSession();
   const signedIn = !isPending && Boolean(session?.user);
@@ -79,7 +61,7 @@ const Layout = () => {
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {signedIn && (
               <nav className="flex items-center gap-1" aria-label="Main navigation">
-                <NavLink to="/" end className={navLinkClass}>
+                <NavLink to="/analyze" className={navLinkClass}>
                   Analyze
                 </NavLink>
                 <NavLink to="/saved" className={navLinkClass}>
@@ -91,7 +73,7 @@ const Layout = () => {
               </nav>
             )}
             <AuthControls />
-            <ThemeToggle dark={darkMode} onToggle={() => setDarkMode((v) => !v)} />
+            <ThemeToggle dark={dark} onToggle={toggle} />
           </div>
         </header>
 

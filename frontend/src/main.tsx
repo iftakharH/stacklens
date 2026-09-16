@@ -1,5 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+// Self-hosted variable fonts (width + weight axes). Bundled locally so the app
+// makes no third-party font request at runtime.
+import '@fontsource-variable/archivo/wdth.css';
+import '@fontsource-variable/martian-mono/wdth.css';
 import './index.css';
 import App from './App.tsx';
 

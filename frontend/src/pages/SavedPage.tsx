@@ -51,7 +51,7 @@ const CandidateRow: React.FC<{
     </div>
     <div className="flex shrink-0 items-center gap-2">
       <Link
-        to={`/?q=${encodeURIComponent(candidate.github_username)}`}
+        to={`/analyze?q=${encodeURIComponent(candidate.github_username)}`}
         className={analyzeLinkClass}
       >
         Analyze →
@@ -233,8 +233,8 @@ const SavedPage = () => {
               Analyze a GitHub profile and hit “Save candidate” to keep it here
               with a note.
             </p>
-            <Link to="/" className={analyzeLinkClass}>
-              Analyze a profile →
+            <Link to="/analyze" className={analyzeLinkClass}>
+              Analyze a profile
             </Link>
           </div>
         </Card>

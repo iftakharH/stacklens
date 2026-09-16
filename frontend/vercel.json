@@ -1,9 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://stacklens-s6or.onrender.com/:path*"
-    }
-  ]
-}
-

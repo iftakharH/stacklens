@@ -1,0 +1,76 @@
+name: Backup
+
+on:
+  schedule:
+    # Daily at 03:00 UTC (GitHub cron runs on the default branch only).
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: pg_dump to Cloudflare R2 (14-day retention)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Graceful skip: stays green (exit 0) until the user configures secrets.
+      - name: Check backup configuration
+        id: check
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::DATABASE_URL secret not set — skipping backup."
+            exit 0
+          fi
+          if [ -z "$R2_ENDPOINT" ] || [ -z "$R2_ACCESS_KEY_ID" ] || [ -z "$R2_SECRET_ACCESS_KEY" ]; then
+            echo "::notice::R2 secrets (R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY) not all set — skipping backup."
+            exit 0
+          fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure pg_dump is available
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          if ! command -v pg_dump >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends postgresql-client
+          fi
+          pg_dump --version
+
+      # rclone ships on GitHub's Ubuntu runners; install from apt as a fallback.
+      - name: Ensure rclone is available
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          if ! command -v rclone >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rclone
+          fi
+          rclone version
+
+      # The rclone remote "r2" is defined via RCLONE_CONFIG_R2_* env vars
+      # (S3-compatible, Cloudflare provider) — no config file, no state.
+      - name: Dump database, upload to R2, prune old dumps
+        if: steps.check.outputs.configured == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          DUMP="stacklens-$(date +%F).dump"
+          pg_dump "$DATABASE_URL" --no-owner --format=custom -f "$DUMP"
+          echo "Dumped $(stat -c '%s' "$DUMP") bytes to $DUMP"
+          rclone copy "$DUMP" r2:stacklens-backup/
+          echo "Uploaded $DUMP to R2 bucket stacklens-backup. Current contents:"
+          rclone ls r2:stacklens-backup/
+          rclone delete r2:stacklens-backup --min-age 14d
+          echo "Pruned dumps older than 14 days."

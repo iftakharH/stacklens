@@ -49,3 +49,10 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Respect reduced-motion preferences: render final state immediately. */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation: none;
+  }
+}

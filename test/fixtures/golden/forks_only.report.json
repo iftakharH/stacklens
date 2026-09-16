@@ -1,0 +1,93 @@
+{
+  "overview": {
+    "avatar_url": "https://avatars.githubusercontent.com/u/9000002?v=4",
+    "username": "forks-only",
+    "name": "Forks Only",
+    "bio": "I learn by forking.",
+    "followers": 3,
+    "following": 12,
+    "public_repos": 4,
+    "html_url": "https://github.com/forks-only",
+    "account_age_years": 5.4,
+    "last_activity_days": 216,
+    "created_at": "2024-08-01T08:30:00Z"
+  },
+  "stack": {
+    "primary_language": "JavaScript",
+    "secondary_language": "Python",
+    "language_distribution": [
+      {
+        "language": "JavaScript",
+        "count": 10500,
+        "percentage": 95.3
+      },
+      {
+        "language": "Python",
+        "count": 400,
+        "percentage": 3.6
+      },
+      {
+        "language": "Other",
+        "count": 120,
+        "percentage": 1.1
+      }
+    ]
+  },
+  "highlights": [
+    {
+      "id": 9100001,
+      "name": "react",
+      "description": null,
+      "stars": 0,
+      "html_url": "https://github.com/forks-only/react",
+      "language": "JavaScript",
+      "updated_at": "2029-01-02T11:00:00Z"
+    },
+    {
+      "id": 9100002,
+      "name": "express",
+      "description": null,
+      "stars": 0,
+      "html_url": "https://github.com/forks-only/express",
+      "language": "JavaScript",
+      "updated_at": "2029-03-18T16:45:00Z"
+    },
+    {
+      "id": 9100003,
+      "name": "notes-app",
+      "description": null,
+      "stars": 0,
+      "html_url": "https://github.com/forks-only/notes-app",
+      "language": null,
+      "updated_at": "2029-05-30T07:20:00Z"
+    },
+    {
+      "id": 9100004,
+      "name": "python-cheatsheet",
+      "description": null,
+      "stars": 0,
+      "html_url": "https://github.com/forks-only/python-cheatsheet",
+      "language": "Python",
+      "updated_at": "2026-09-01T13:10:00Z"
+    }
+  ],
+  "scores": {
+    "activity": 2,
+    "stackDiversity": 6,
+    "projectQuality": 2,
+    "overall": 3,
+    "hireability": "Developing"
+  },
+  "summary": "Developer with a JavaScript-focused public portfolio (4 repos, 3 language(s)). Low recent activity — would benefit from more consistent contributions. Opportunity: more real-world projects, better project documentation, more visibility (stars).",
+  "insights": [
+    "Low activity — consider pushing code more consistently.",
+    "Projects lack documentation — many repos are missing descriptions.",
+    "Low visibility — few stars across repositories.",
+    "Small portfolio — add more public projects for stronger signal."
+  ],
+  "meta": {
+    "repo_count": 4,
+    "total_stars": 0,
+    "follower_count": 3
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "overview": {
+    "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+    "username": "torvalds",
+    "name": "Linus Torvalds",
+    "bio": null,
+    "followers": 323661,
+    "following": 0,
+    "public_repos": 12,
+    "html_url": "https://github.com/torvalds",
+    "account_age_years": 18.3,
+    "last_activity_days": 1203,
+    "created_at": "2011-09-03T15:26:22Z"
+  },
+  "stack": {
+    "primary_language": "C",
+    "secondary_language": "C++",
+    "language_distribution": [
+      {
+        "language": "C",
+        "count": 6448552,
+        "percentage": 97.5
+      },
+      {
+        "language": "C++",
+        "count": 155337,
+        "percentage": 2.3
+      },
+      {
+        "language": "OpenSCAD",
+        "count": 10882,
+        "percentage": 0.2
+      }
+    ]
+  },
+  "highlights": [
+    {
+      "id": 2325298,
+      "name": "linux",
+      "description": "Linux kernel source tree",
+      "stars": 249118,
+      "html_url": "https://github.com/torvalds/linux",
+      "language": "C",
+      "updated_at": "2026-09-15T19:18:07Z"
+    },
+    {
+      "id": 1130786764,
+      "name": "AudioNoise",
+      "description": "Random digital audio effects",
+      "stars": 4488,
+      "html_url": "https://github.com/torvalds/AudioNoise",
+      "language": "C",
+      "updated_at": "2026-05-08T17:20:22Z"
+    },
+    {
+      "id": 1058343058,
+      "name": "GuitarPedal",
+      "description": "Linus learns analog circuits",
+      "stars": 2315,
+      "html_url": "https://github.com/torvalds/GuitarPedal",
+      "language": "C",
+      "updated_at": "2026-09-15T16:46:57Z"
+    },
+    {
+      "id": 117900805,
+      "name": "uemacs",
+      "description": "Random version of microemacs with my private modificatons",
+      "stars": 2138,
+      "html_url": "https://github.com/torvalds/uemacs",
+      "language": "C",
+      "updated_at": "2026-08-06T18:30:25Z"
+    },
+    {
+      "id": 86106493,
+      "name": "test-tlb",
+      "description": "Stupid memory latency and TLB tester",
+      "stars": 1058,
+      "html_url": "https://github.com/torvalds/test-tlb",
+      "language": "C",
+      "updated_at": "2024-08-19T21:13:36Z"
+    }
+  ],
+  "scores": {
+    "activity": 0,
+    "stackDiversity": 6,
+    "projectQuality": 9,
+    "overall": 6,
+    "hireability": "Junior Ready"
+  },
+  "summary": "Developer with a C-focused public portfolio (12 repos, 3 language(s)). Low recent activity — would benefit from more consistent contributions. Profile is well-rounded with good public signals.",
+  "insights": [
+    "Low activity — consider pushing code more consistently."
+  ],
+  "meta": {
+    "repo_count": 12,
+    "total_stars": 262280,
+    "follower_count": 323661
+  }
+}

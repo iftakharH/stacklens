@@ -1,0 +1,115 @@
+{
+  "overview": {
+    "avatar_url": "https://avatars.githubusercontent.com/u/9000003?v=4",
+    "username": "multi-page",
+    "name": "Multi Page",
+    "bio": "Pagination test profile.",
+    "followers": 7,
+    "following": 5,
+    "public_repos": 121,
+    "html_url": "https://github.com/multi-page",
+    "account_age_years": 6.8,
+    "last_activity_days": 0,
+    "created_at": "2023-03-10T00:00:00Z"
+  },
+  "stack": {
+    "primary_language": "CSS",
+    "secondary_language": "Go",
+    "language_distribution": [
+      {
+        "language": "CSS",
+        "count": 12620,
+        "percentage": 19
+      },
+      {
+        "language": "Go",
+        "count": 11880,
+        "percentage": 17.9
+      },
+      {
+        "language": "Rust",
+        "count": 11140,
+        "percentage": 16.8
+      },
+      {
+        "language": "JavaScript",
+        "count": 10797,
+        "percentage": 16.2
+      },
+      {
+        "language": "Python",
+        "count": 10400,
+        "percentage": 15.6
+      },
+      {
+        "language": "TypeScript",
+        "count": 9660,
+        "percentage": 14.5
+      }
+    ]
+  },
+  "highlights": [
+    {
+      "id": 9200023,
+      "name": "repo-023",
+      "description": "Synthetic repo repo-023 for pagination tests",
+      "stars": 49,
+      "html_url": "https://github.com/multi-page/repo-023",
+      "language": "Go",
+      "updated_at": "2029-12-31T01:00:00.000Z"
+    },
+    {
+      "id": 9200073,
+      "name": "repo-073",
+      "description": "Synthetic repo repo-073 for pagination tests",
+      "stars": 49,
+      "html_url": "https://github.com/multi-page/repo-073",
+      "language": "JavaScript",
+      "updated_at": "2029-12-28T23:00:00.000Z"
+    },
+    {
+      "id": 9200046,
+      "name": "repo-046",
+      "description": "Synthetic repo repo-046 for pagination tests",
+      "stars": 48,
+      "html_url": "https://github.com/multi-page/repo-046",
+      "language": "Rust",
+      "updated_at": "2029-12-30T02:00:00.000Z"
+    },
+    {
+      "id": 9200096,
+      "name": "repo-096",
+      "description": null,
+      "stars": 48,
+      "html_url": "https://github.com/multi-page/repo-096",
+      "language": "CSS",
+      "updated_at": "2029-12-28T00:00:00.000Z"
+    },
+    {
+      "id": 9200019,
+      "name": "repo-019",
+      "description": "Synthetic repo repo-019 for pagination tests",
+      "stars": 47,
+      "html_url": "https://github.com/multi-page/repo-019",
+      "language": "JavaScript",
+      "updated_at": "2029-12-31T05:00:00.000Z"
+    }
+  ],
+  "scores": {
+    "activity": 10,
+    "stackDiversity": 10,
+    "projectQuality": 9,
+    "overall": 9.5,
+    "hireability": "Hireable"
+  },
+  "summary": "Developer with a CSS-focused public portfolio (121 repos, 6 language(s)). Actively pushing code with recent updates. Profile is well-rounded with good public signals.",
+  "insights": [
+    "Strong activity — actively pushing code.",
+    "Good tech stack diversity."
+  ],
+  "meta": {
+    "repo_count": 121,
+    "total_stars": 2953,
+    "follower_count": 7
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "overview": {
+    "avatar_url": "https://avatars.githubusercontent.com/u/170270?v=4",
+    "username": "sindresorhus",
+    "name": "Sindre Sorhus",
+    "bio": "Full-Time Open-Sourcerer. Focused on Swift & JavaScript. Makes macOS apps, CLI tools, npm packages.",
+    "followers": 83940,
+    "following": 31,
+    "public_repos": 1140,
+    "html_url": "https://github.com/sindresorhus",
+    "account_age_years": 20,
+    "last_activity_days": 1204,
+    "created_at": "2009-12-20T22:57:02Z"
+  },
+  "stack": {
+    "primary_language": "Other",
+    "secondary_language": "JavaScript",
+    "language_distribution": [
+      {
+        "language": "Other",
+        "count": 1493396,
+        "percentage": 73.9
+      },
+      {
+        "language": "JavaScript",
+        "count": 263142,
+        "percentage": 13
+      },
+      {
+        "language": "Swift",
+        "count": 102913,
+        "percentage": 5.1
+      },
+      {
+        "language": "Astro",
+        "count": 82788,
+        "percentage": 4.1
+      },
+      {
+        "language": "TypeScript",
+        "count": 43860,
+        "percentage": 2.2
+      },
+      {
+        "language": "Python",
+        "count": 16238,
+        "percentage": 0.8
+      },
+      {
+        "language": "CSS",
+        "count": 14984,
+        "percentage": 0.7
+      },
+      {
+        "language": "HTML",
+        "count": 1317,
+        "percentage": 0.1
+      },
+      {
+        "language": "Shell",
+        "count": 824,
+        "percentage": 0
+      },
+      {
+        "language": "Objective-C",
+        "count": 712,
+        "percentage": 0
+      },
+      {
+        "language": "Vim Script",
+        "count": 234,
+        "percentage": 0
+      },
+      {
+        "language": "SCSS",
+        "count": 125,
+        "percentage": 0
+      },
+      {
+        "language": "Rust",
+        "count": 109,
+        "percentage": 0
+      },
+      {
+        "language": "C",
+        "count": 29,
+        "percentage": 0
+      },
+      {
+        "language": "C++",
+        "count": 15,
+        "percentage": 0
+      }
+    ]
+  },
+  "highlights": [
+    {
+      "id": 21737465,
+      "name": "awesome",
+      "description": "😎 Awesome lists about all kinds of interesting topics [NOTE: Pull requests are temporarily disabled until I have a chance to catch up with the existing ones]",
+      "stars": 506369,
+      "html_url": "https://github.com/sindresorhus/awesome",
+      "language": null,
+      "updated_at": "2026-09-02T02:10:47Z"
+    },
+    {
+      "id": 21737266,
+      "name": "awesome-nodejs",
+      "description": ":zap: Delightful Node.js packages and resources [BECAUSE OF TOO MUCH SPAM AND LOW-QUALITY SUBMISSIONS, SUBMISSIONS ARE PAUSED TEMPORARILY]",
+      "stars": 66815,
+      "html_url": "https://github.com/sindresorhus/awesome-nodejs",
+      "language": null,
+      "updated_at": "2026-09-02T02:11:34Z"
+    },
+    {
+      "id": 34453060,
+      "name": "awesome-electron",
+      "description": "Useful resources for creating apps with Electron [SUBMISSIONS ARE TEMPORARILY PAUSED BECAUSE I'M TIRED OF REVIEWING LOW-QUALITY STUFF]",
+      "stars": 27283,
+      "html_url": "https://github.com/sindresorhus/awesome-electron",
+      "language": null,
+      "updated_at": "2026-05-03T11:29:47Z"
+    },
+    {
+      "id": 15008072,
+      "name": "quick-look-plugins",
+      "description": "List of useful Quick Look plugins for developers",
+      "stars": 18760,
+      "html_url": "https://github.com/sindresorhus/quick-look-plugins",
+      "language": null,
+      "updated_at": "2026-07-25T15:31:05Z"
+    },
+    {
+      "id": 175398594,
+      "name": "type-fest",
+      "description": "A collection of essential TypeScript types",
+      "stars": 17409,
+      "html_url": "https://github.com/sindresorhus/type-fest",
+      "language": "TypeScript",
+      "updated_at": "2026-09-08T13:15:16Z"
+    }
+  ],
+  "scores": {
+    "activity": 0,
+    "stackDiversity": 10,
+    "projectQuality": 10,
+    "overall": 7.5,
+    "hireability": "Strong Junior"
+  },
+  "summary": "Developer with a Other-focused public portfolio (1000 repos, 15 language(s)). Low recent activity — would benefit from more consistent contributions. Profile is well-rounded with good public signals.",
+  "insights": [
+    "Low activity — consider pushing code more consistently.",
+    "Good tech stack diversity."
+  ],
+  "meta": {
+    "repo_count": 1000,
+    "total_stars": 1082586,
+    "follower_count": 83940
+  }
+}

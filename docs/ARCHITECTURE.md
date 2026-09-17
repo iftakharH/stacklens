@@ -142,8 +142,11 @@ All responses use the envelope `{ ok: true, data }` or
   `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, otherwise a
   per-process in-memory map. A limiter failure logs and allows the request.
 - Defaults (`RATE_LIMIT_*`): anonymous `/api/*` 10/min, authenticated 100/min,
-  `/api/auth/*` 5/min. Responses carry `X-RateLimit-Limit/Remaining/Reset`;
-  a breach returns `429 RATE_LIMITED` + `Retry-After`.
+  30/min for **mutating** auth endpoints (`POST`/`PUT`/`DELETE` under
+  `/api/auth/*`). Session reads (`GET`) are never limited — they happen on every
+  page load, and a 429 there left the client's session promise pending (the UI
+  appeared frozen). Responses carry `X-RateLimit-Limit/Remaining/Reset`; a
+  breach returns `429 RATE_LIMITED` + `Retry-After`.
 - No API response caching: every analysis refetches GitHub (so the GitHub quota
   is the real ceiling). Persistence dedupes identical reports by content
   hash but does not serve them back for `/api/analyze`.

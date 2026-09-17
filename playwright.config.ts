@@ -17,10 +17,10 @@ const apiEnv: Record<string, string> = {
   // Enables the TEST_SESSION_USER_ID override in lib/session.js (test only).
   NODE_ENV: 'test',
   GITHUB_API_BASE: 'http://127.0.0.1:4999',
-  // The default 5/min auth-route limit is for humans; better-auth's react
-  // client re-fetches get-session on every useSession mount while signed
-  // out, so rapid page loads in e2e exceed it (a 429 then leaves the client
-  // pending forever). Same approach as the vitest integration suite.
+  // Session reads are unlimited, but mutating auth endpoints default to 30/min
+  // for humans and the suite fires many sign-in attempts; raise it so auth
+  // behaviour, not the limiter, is what these specs exercise. Same approach as
+  // the vitest integration suite.
   RATE_LIMIT_AUTH_ROUTES: '100',
   ...(E2E_DATABASE_URL
     ? {

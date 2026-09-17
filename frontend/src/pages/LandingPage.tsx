@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authClient } from '../api/auth';
 import LanguageBar from '../components/LanguageBar';
+import SignInMethods from '../components/SignInMethods';
 import { useTheme } from '../lib/useTheme';
 
 // Real public data, read from github.com/torvalds. These are the values the
@@ -65,27 +66,7 @@ const KEPT = [
   },
 ];
 
-type SendState =
-  | { status: 'idle' | 'sending' | 'sent' }
-  | { status: 'error'; message: string };
-
 const fmt = new Intl.NumberFormat('en-US');
-
-const authErrorText = (
-  err: { code?: string; status?: number; message?: string } | null | undefined
-): string => {
-  if (!err) return 'Something went wrong. Try again.';
-  if (err.code === 'CONFIG_MISSING' || err.status === 503) {
-    return 'Accounts are not configured on this server, so analyzing is what is available here.';
-  }
-  return err.message || 'Something went wrong. Try again.';
-};
-
-const GitHubMark: React.FC = () => (
-  <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4 fill-current">
-    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-  </svg>
-);
 
 const ThemeButton: React.FC<{ dark: boolean; onToggle: () => void }> = ({
   dark,
@@ -111,9 +92,6 @@ const ThemeButton: React.FC<{ dark: boolean; onToggle: () => void }> = ({
 
 const SignInPanel: React.FC = () => {
   const { data: session, isPending } = authClient.useSession();
-  const [email, setEmail] = useState('');
-  const [send, setSend] = useState<SendState>({ status: 'idle' });
-  const [socialError, setSocialError] = useState<string | null>(null);
 
   if (isPending) {
     return (
@@ -165,99 +143,30 @@ const SignInPanel: React.FC = () => {
     );
   }
 
-  const handleGithub = async () => {
-    setSocialError(null);
-    const { error } = await authClient.signIn.social({
-      provider: 'github',
-      callbackURL: '/analyze',
-    });
-    if (error) setSocialError(authErrorText(error));
-  };
-
-  const handleMagicLink = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSocialError(null);
-    const trimmed = email.trim();
-    if (!trimmed) {
-      setSend({ status: 'error', message: 'Enter your email address first.' });
-      return;
-    }
-    setSend({ status: 'sending' });
-    const { error } = await authClient.signIn.magicLink({
-      email: trimmed,
-      callbackURL: '/analyze',
-    });
-    if (error) {
-      setSend({ status: 'error', message: authErrorText(error) });
-    } else {
-      setSend({ status: 'sent' });
-    }
-  };
-
   return (
     <div className="self-start rounded-[6px] border border-line bg-panel p-5 sm:p-6">
       <p className="text-[14px] font-semibold text-ink">Sign in</p>
       <p className="mt-2 text-[13px] leading-relaxed text-muted">
         Use GitHub, or have a one-time link emailed to you.
       </p>
-
-      <button
-        type="button"
-        onClick={() => {
-          void handleGithub();
-        }}
-        className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-ink text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
-      >
-        <GitHubMark />
-        Sign in with GitHub
-      </button>
-
-      <form onSubmit={handleMagicLink} className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <label htmlFor="signin-email" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="signin-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@company.com"
-          autoComplete="email"
-          className="h-11 min-w-0 flex-1 rounded-[6px] border border-line bg-paper px-3 text-[14px] text-ink placeholder:text-muted"
-        />
-        <button
-          type="submit"
-          disabled={send.status === 'sending'}
-          className="h-11 shrink-0 rounded-[6px] border border-line px-4 text-[13px] font-semibold text-ink transition-colors hover:border-signal disabled:opacity-60"
-        >
-          {send.status === 'sending' ? 'Sending…' : 'Email me a link'}
-        </button>
-      </form>
-
-      {send.status === 'sent' && (
-        <p className="mt-3 text-[13px] text-muted" role="status">
-          Check your inbox for the sign-in link.
-        </p>
-      )}
-      {send.status === 'error' && (
-        <p className="mt-3 text-[13px] text-danger" role="alert">
-          {send.message}
-        </p>
-      )}
-      {socialError && (
-        <p className="mt-3 text-[13px] text-danger" role="alert">
-          {socialError}
-        </p>
-      )}
+      <div className="mt-5">
+        <SignInMethods idPrefix="landing" />
+      </div>
     </div>
   );
 };
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { dark, toggle } = useTheme();
   const { data: session, isPending } = authClient.useSession();
   const signedIn = !isPending && Boolean(session?.user);
+
+  // Failed sign-ins come back here as ?authError=1&error=<code> (see
+  // lib/auth.js onAPIError + SignInMethods errorCallbackURL).
+  const authFailed =
+    searchParams.has('error') || searchParams.get('authError') === '1';
 
   const [input, setInput] = useState('');
   const [inputError, setInputError] = useState('');
@@ -332,11 +241,25 @@ const LandingPage = () => {
       </header>
 
       <main className="mx-auto w-full max-w-[1120px] px-5 sm:px-8">
+        {authFailed && (
+          <div
+            role="status"
+            className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[6px] border border-line bg-panel px-4 py-3 text-[13px] text-ink"
+          >
+            <span>Sign-in didn&apos;t complete. Nothing was changed.</span>
+            <a
+              href="#account"
+              className="underline decoration-line underline-offset-4 transition-colors hover:decoration-signal"
+            >
+              Try again
+            </a>
+          </div>
+        )}
         <section className="py-12 sm:py-16 lg:py-20">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(0,0.85fr)] lg:gap-14">
             <div>
               <h1 className="display max-w-[15ch] text-balance text-[clamp(2.25rem,4.6vw,3.25rem)] text-ink">
-                Read the work, not the résumé.
+                Read the work, not the resume.
               </h1>
               <p className="mt-6 max-w-[58ch] text-[1.0625rem] leading-[1.6] text-muted">
                 Paste a GitHub profile. StackLens returns one page — language
@@ -364,7 +287,7 @@ const LandingPage = () => {
                     type="submit"
                     className="h-12 shrink-0 rounded-[6px] bg-signal px-5 text-[15px] font-semibold text-signal-ink transition-opacity hover:opacity-90"
                   >
-                    Analyze
+                    Analyze profile
                   </button>
                 </div>
                 {inputError ? (

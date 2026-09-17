@@ -6,6 +6,7 @@ import '@fontsource-variable/archivo/wdth.css';
 import '@fontsource-variable/martian-mono/wdth.css';
 import './index.css';
 import App from './App.tsx';
+import ErrorBoundary from './components/ErrorBoundary.tsx';
 
 // Optional error tracking: enabled only when VITE_SENTRY_DSN is configured.
 // The SDK is imported dynamically, so without the env var the production
@@ -21,6 +22,8 @@ if (sentryDsn) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>
 );

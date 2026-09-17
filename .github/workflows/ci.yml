@@ -66,6 +66,38 @@ jobs:
       - name: Run all tests (unit + integration, real Postgres)
         run: npm test
 
+  e2e:
+    name: E2E (dev server + production-build smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20 with npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Dev-server E2E (zero-env, mock GitHub)
+        run: npm run test:e2e
+
+      - name: Production-build smoke (vite preview + same-origin /api proxy)
+        run: npm run test:e2e:prod
+
   migrate:
     name: Apply database migrations (main only)
     needs: quality

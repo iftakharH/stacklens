@@ -5,17 +5,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Legacy app palette (report pages). Kept so existing pages keep working.
+        // Legacy `primary` scale now points at the landing-page signal token
+        // (see src/index.css). Safety net only: a missed legacy class resolves
+        // to the theme-aware teal instead of the retired violet gradient.
         primary: {
-          DEFAULT: '#7C3AED',
-          soft: '#A855F7',
-          subtle: '#EDE9FE',
-          dark: '#5B21B6',
+          DEFAULT: 'var(--signal)',
+          soft: 'var(--signal)',
+          subtle: 'var(--paper)',
+          dark: 'var(--signal)',
         },
         surface: {
-          DEFAULT: '#0F172A',
-          alt: '#020617',
-          light: '#F9FAFB',
+          DEFAULT: 'var(--panel)',
+          alt: 'var(--paper)',
+          light: 'var(--panel)',
         },
         // Landing-page tokens. Values flip with the `.dark` class via CSS vars
         // (see src/index.css). They are plain `var()` strings, so do not use

@@ -10,6 +10,7 @@ import {
 import type { AnalyzeData } from '../types';
 import ErrorCard from '../components/ErrorCard';
 import ReportView from '../components/ReportView';
+import { useSignIn } from '../components/signin-context';
 import { Card, SkeletonPulse } from '../components/ui';
 
 type AnalysisState =
@@ -34,15 +35,16 @@ const extractUsernameClient = (raw: string): string | null => {
 };
 
 const actionButtonClass =
-  'inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition hover:border-primary-soft hover:text-primary disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-soft dark:hover:text-primary-soft dark:disabled:opacity-50';
+  'inline-flex h-11 items-center justify-center rounded-[6px] border border-line px-3 text-[13px] font-semibold text-ink transition-colors hover:border-signal disabled:cursor-not-allowed disabled:opacity-60';
 
 const primaryActionButtonClass =
-  'inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary-soft px-4 py-2 text-xs font-medium text-white shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex h-11 items-center justify-center rounded-[6px] bg-signal px-4 text-[13px] font-semibold text-signal-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
 
 // Save-candidate + share-link actions shown on a fresh analyze result.
 // Enabled only for signed-in users when the report was persisted (report_id).
 const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
   const { data: session, isPending } = authClient.useSession();
+  const { openSignIn } = useSignIn();
   const signedIn = !isPending && Boolean(session?.user);
   const enabled = signedIn && data.report_id != null;
 
@@ -97,7 +99,7 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-white/80 to-white/70 dark:from-primary-soft/5 dark:via-slate-800/80 dark:to-slate-800/60">
+    <Card>
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center">
@@ -109,7 +111,7 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
               aria-label="Candidate note"
               maxLength={500}
               disabled={!enabled || saveState === 'saving'}
-              className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500"
+              className="h-11 min-w-0 flex-1 rounded-[6px] border border-line bg-panel px-3 text-[13px] text-ink placeholder:text-muted disabled:opacity-60"
             />
           </div>
           <button
@@ -135,31 +137,40 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
         </div>
 
         {!enabled && !isPending && !signedIn && (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Sign in (top right) to save candidates and create share links —
-            analyzing stays free without an account.
+          <p className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
+            <span>
+              Sign in to save candidates and create share links — analyzing
+              stays free without an account.
+            </span>
+            <button
+              type="button"
+              onClick={openSignIn}
+              className="rounded-[6px] border border-line px-2.5 py-1 text-[13px] font-semibold text-ink transition-colors hover:border-signal"
+            >
+              Sign in
+            </button>
           </p>
         )}
         {!enabled && signedIn && (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-[13px] text-muted">
             Reports aren&apos;t being stored on this server, so saving and
             sharing are unavailable.
           </p>
         )}
 
         {saveState === 'saved' && (
-          <p className="text-xs text-emerald-600 dark:text-emerald-400" role="status">
+          <p className="text-[13px] text-signal" role="status">
             Saved — see your shortlist on the Saved page.
           </p>
         )}
         {saveState === 'error' && (
-          <p className="text-xs text-rose-600 dark:text-rose-400" role="alert">
+          <p className="text-[13px] text-danger" role="alert">
             {saveError}
           </p>
         )}
 
         {shareState === 'copied' && (
-          <p className="text-xs text-emerald-600 dark:text-emerald-400" role="status">
+          <p className="text-[13px] text-signal" role="status">
             Link copied{shareUrl ? '' : ' to your clipboard'} — anyone with it
             can view this report.
           </p>
@@ -171,11 +182,11 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
             value={shareUrl}
             aria-label="Share link"
             onFocus={(e) => e.target.select()}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
+            className="h-11 w-full rounded-[6px] border border-line bg-paper px-3 text-[13px] text-muted"
           />
         )}
         {shareState === 'error' && (
-          <p className="text-xs text-rose-600 dark:text-rose-400" role="alert">
+          <p className="text-[13px] text-danger" role="alert">
             {shareError}
           </p>
         )}
@@ -257,46 +268,42 @@ const AnalyzePage = () => {
   );
 
   return (
-    <main className="flex flex-1 flex-col gap-4 lg:flex-row lg:gap-6 xl:gap-8">
-      <section className="w-full shrink-0 lg:max-w-[380px] xl:max-w-[420px]">
-        <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-sm dark:border-slate-700/80 dark:bg-slate-800/90 sm:p-5 md:p-6">
-          <div className="mb-4 space-y-1.5 sm:mb-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-primary dark:text-primary-soft sm:text-xs">
-              Profile Analyzer
-            </p>
-            <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-50 sm:text-2xl">
-              Drop a GitHub profile
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-              Paste a URL or username for a recruiter-friendly developer snapshot.
-            </p>
+    <main className="flex flex-1 flex-col gap-4 sm:gap-5">
+      {/* Search sits in a full-width bar so the candidate report below gets the
+          whole canvas — the profile is the product, not a sidebar. */}
+      <section className="rounded-[6px] border border-line bg-panel p-4 sm:p-5">
+        <form onSubmit={handleAnalyze}>
+          <label
+            htmlFor="github-profile-input"
+            className="block text-[13px] font-medium text-ink"
+          >
+            GitHub profile URL or username
+          </label>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
+              id="github-profile-input"
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="https://github.com/username"
+              className="h-11 min-w-0 flex-1 rounded-[6px] border border-line bg-paper px-3 text-[14px] text-ink placeholder:text-muted sm:max-w-[460px]"
+            />
+            <button
+              type="submit"
+              className="inline-flex h-11 items-center justify-center rounded-[6px] bg-signal px-5 text-[14px] font-semibold text-signal-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={state.status === 'loading'}
+            >
+              {state.status === 'loading' ? 'Analyzing…' : 'Analyze profile'}
+            </button>
+            {state.status === 'loading' && (
+              <span className="flex items-center sm:pl-2">
+                <SkeletonPulse />
+              </span>
+            )}
           </div>
 
-          <form onSubmit={handleAnalyze} className="space-y-3">
-            <label
-              htmlFor="github-profile-input"
-              className="block text-xs font-medium text-slate-500 dark:text-slate-400"
-            >
-              GitHub profile URL or username
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                id="github-profile-input"
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="https://github.com/username"
-                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500"
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary-soft px-4 py-2.5 text-sm font-medium text-white shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={state.status === 'loading'}
-              >
-                {state.status === 'loading' ? 'Analyzing…' : 'Analyze Profile'}
-              </button>
-            </div>
-            {state.status === 'error' && (
+          {state.status === 'error' && (
+            <div className="mt-3">
               <ErrorCard
                 error={state.error}
                 onRetry={() => {
@@ -304,27 +311,18 @@ const AnalyzePage = () => {
                   void runAnalysis(input);
                 }}
               />
-            )}
-            {state.status === 'idle' && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Public data only · no token required.
-              </p>
-            )}
-          </form>
-        </div>
-
-        <div className="mt-3 sm:mt-4">
-          {state.status === 'loading' ? (
-            <SkeletonPulse />
-          ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Quick technical screening for recruiters.
+            </div>
+          )}
+          {state.status === 'idle' && (
+            <p className="mt-3 text-[13px] text-muted">
+              Public data only · no token required. Paste a profile to build the
+              report.
             </p>
           )}
-        </div>
+        </form>
       </section>
 
-      <section className="min-w-0 flex-1 space-y-3 sm:space-y-4">
+      <section className="min-w-0 space-y-3 sm:space-y-4">
         {state.status === 'success' ? (
           <>
             <ResultActions
@@ -339,13 +337,11 @@ const AnalyzePage = () => {
         ) : (
           <Card>
             <div className="flex flex-col items-center justify-center gap-3 py-10 text-center sm:py-12">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary dark:text-primary-soft">
-                Developer report
-              </p>
-              <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 sm:text-xl">
+              <p className="text-[13px] font-semibold text-ink">Developer report</p>
+              <h2 className="text-lg font-semibold text-ink sm:text-xl">
                 Your next candidate, in one glance.
               </h2>
-              <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+              <p className="max-w-sm text-[13px] leading-relaxed text-muted">
                 Paste a GitHub profile to see a compact overview of stack, activity, and
                 signal — so you can move from resume to conversation faster.
               </p>

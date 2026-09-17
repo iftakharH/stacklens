@@ -71,14 +71,29 @@ const authedLimiter = createRateLimiter({
 });
 const authRouteLimiter = createRateLimiter({
   windowMs: WINDOW_MS,
-  max: Number(process.env.RATE_LIMIT_AUTH_ROUTES) || 5,
+  max: Number(process.env.RATE_LIMIT_AUTH_ROUTES) || 30,
   keyFn: rateKeyFn,
 });
 
+// Session reads (GET/HEAD) happen on every page load and are cheap; limiting
+// them locked visitors out of their own session and left the client's session
+// promise pending (the UI looked frozen). Only the mutating auth endpoints —
+// sign-in, callback, magic-link send, sign-out — are throttled.
+const limitMutatingAuthOnly = (req, res, next) => {
+  if (
+    req.method === "GET" ||
+    req.method === "HEAD" ||
+    req.method === "OPTIONS"
+  ) {
+    return next();
+  }
+  return authRouteLimiter(req, res, next);
+};
+
 // Better Auth catch-all. Mounted BEFORE express.json() so the auth handler
-// receives the raw request body, and with a stricter per-IP limit.
-// When auth is not configured, /api/auth/* degrades to 503 CONFIG_MISSING.
-app.all("/api/auth/{*any}", authRouteLimiter, async (req, res, next) => {
+// receives the raw request body. When auth is not configured, /api/auth/*
+// degrades to 503 CONFIG_MISSING.
+app.all("/api/auth/{*any}", limitMutatingAuthOnly, async (req, res, next) => {
   try {
     const handler = await getAuthHandler();
     if (!handler) {

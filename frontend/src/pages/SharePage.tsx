@@ -69,10 +69,8 @@ const SharePage = () => {
   return (
     <main className="flex flex-1 flex-col gap-4">
       <div className="space-y-1.5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-primary dark:text-primary-soft sm:text-xs">
-          Shared report
-        </p>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-50 sm:text-2xl">
+        <p className="text-[13px] font-semibold text-ink">Shared report</p>
+        <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
           A developer snapshot, shared with you.
         </h2>
       </div>
@@ -84,11 +82,11 @@ const SharePage = () => {
         />
       </div>
 
-      <p className="pt-2 text-center text-[11px] text-slate-400 dark:text-slate-500">
+      <p className="pt-2 text-center text-[12px] text-muted">
         Generated with{' '}
         <a
           href="/"
-          className="font-medium text-primary hover:underline dark:text-primary-soft"
+          className="font-medium text-signal hover:underline"
         >
           StackLens
         </a>

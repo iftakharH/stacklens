@@ -25,7 +25,7 @@ test.describe('accessibility (axe)', () => {
     page,
   }) => {
     await page.goto('/analyze');
-    await expect(page.getByRole('button', { name: 'Analyze Profile' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Analyze profile' })).toBeVisible();
 
     const results = await new AxeBuilder({ page }).analyze();
     const bad = seriousOrCritical(results.violations);

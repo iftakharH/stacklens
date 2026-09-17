@@ -58,22 +58,15 @@ const ErrorCard: React.FC<ErrorCardProps> = ({ error, onRetry, title, hint }) =>
     : (hint ?? copy.hint ?? error.message);
 
   return (
-    <div
-      role="alert"
-      className="rounded-xl border border-rose-300/70 bg-rose-50/90 px-3.5 py-3 dark:border-rose-500/30 dark:bg-rose-950/40"
-    >
-      <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">
-        {heading}
-      </p>
-      <p className="mt-0.5 text-xs text-rose-600 dark:text-rose-400">
-        {description}
-      </p>
+    <div role="alert" className="surface-error rounded-[6px] border px-3.5 py-3">
+      <p className="text-[13px] font-semibold text-danger">{heading}</p>
+      <p className="mt-0.5 text-[13px] text-danger">{description}</p>
       {showRetry && (
         <button
           type="button"
           onClick={onRetry}
           disabled={retryDisabled}
-          className="mt-2 inline-flex items-center rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/40 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-slate-700"
+          className="mt-2 inline-flex items-center rounded-[6px] border border-line bg-panel px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-signal disabled:cursor-not-allowed disabled:opacity-60"
         >
           {retryDisabled ? `Try again in ${seconds}s` : 'Try again'}
         </button>

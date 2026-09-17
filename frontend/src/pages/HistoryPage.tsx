@@ -20,29 +20,7 @@ const isGateError = (err: ApiError) =>
   err.code === 'UNAUTHORIZED' || err.code === 'CONFIG_MISSING';
 
 const backLinkClass =
-  'inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition hover:border-primary-soft hover:text-primary dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-soft dark:hover:text-primary-soft';
-
-const scoreColor = (score: number | null) => {
-  if (score == null) return 'text-slate-400';
-  if (score >= 8) return 'text-emerald-500 dark:text-emerald-400';
-  if (score >= 6) return 'text-amber-500 dark:text-amber-300';
-  return 'text-rose-500 dark:text-rose-400';
-};
-
-const hireabilityBadge = (label: string | null) => {
-  switch (label) {
-    case 'Hireable':
-      return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border-emerald-500/30';
-    case 'Strong Junior':
-      return 'bg-sky-500/15 text-sky-700 dark:text-sky-200 border-sky-500/30';
-    case 'Junior Ready':
-      return 'bg-primary/15 text-primary-dark dark:text-primary-soft border-primary/30';
-    case 'Developing':
-      return 'bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30';
-    default:
-      return 'bg-slate-500/10 text-slate-700 dark:text-slate-200 border-slate-500/20';
-  }
-};
+  'inline-flex items-center gap-1.5 rounded-[6px] border border-line px-3 py-2 text-[13px] font-medium text-ink transition-colors hover:border-signal';
 
 const HistoryRow: React.FC<{
   item: HistoryItem;
@@ -51,13 +29,13 @@ const HistoryRow: React.FC<{
   <button
     type="button"
     onClick={() => onOpen(item.id)}
-    className="flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-left transition hover:border-primary/40 hover:bg-slate-100/80 dark:border-slate-600 dark:bg-slate-800/50 dark:hover:border-primary-soft/40 dark:hover:bg-slate-800/80 sm:flex-row sm:items-center sm:justify-between"
+    className="flex w-full flex-col gap-2 rounded-[6px] border border-line bg-paper p-3 text-left transition-colors hover:border-signal sm:flex-row sm:items-center sm:justify-between"
   >
     <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <span className="truncate text-[13px] font-semibold text-ink">
         @{item.github_username}
       </span>
-      <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      <span className="font-mono text-[11px] text-muted">
         {new Date(item.created_at).toLocaleDateString(undefined, {
           year: 'numeric',
           month: 'short',
@@ -67,15 +45,13 @@ const HistoryRow: React.FC<{
     </div>
     <div className="flex shrink-0 items-center gap-3">
       {item.hireability && (
-        <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${hireabilityBadge(item.hireability)}`}
-        >
+        <span className="inline-flex items-center rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink">
           {item.hireability}
         </span>
       )}
-      <span className={`text-lg font-bold tabular-nums ${scoreColor(item.overall)}`}>
+      <span className="font-mono text-lg font-bold tabular-nums text-ink">
         {item.overall != null ? item.overall.toFixed(1) : '—'}
-        <span className="text-xs font-medium text-slate-400"> / 10</span>
+        <span className="text-[13px] font-medium text-muted"> / 10</span>
       </span>
     </div>
   </button>
@@ -197,7 +173,7 @@ const HistoryPage = () => {
             ← Back to history
           </button>
           {selected.status === 'ready' && selected.report && (
-            <span className="text-xs text-slate-500 dark:text-slate-400">
+            <span className="text-[13px] text-muted">
               Analyzed{' '}
               {new Date(selected.report.created_at).toLocaleString(undefined, {
                 dateStyle: 'medium',
@@ -231,13 +207,11 @@ const HistoryPage = () => {
   return (
     <main className="flex flex-1 flex-col gap-4">
       <div className="space-y-1.5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-primary dark:text-primary-soft sm:text-xs">
-          Report history
-        </p>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-50 sm:text-2xl">
+        <p className="text-[13px] font-semibold text-ink">Report history</p>
+        <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
           Profiles you analyzed
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+        <p className="text-[13px] text-muted">
           Every profile you analyze while signed in is stored here — click one
           to reopen the full report.
         </p>
@@ -256,19 +230,17 @@ const HistoryPage = () => {
       {state.status === 'ready' && state.items.length === 0 && (
         <Card>
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center sm:py-12">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary dark:text-primary-soft">
-              Nothing here yet
-            </p>
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 sm:text-xl">
+            <p className="text-[13px] font-semibold text-ink">Nothing here yet</p>
+            <h2 className="text-lg font-semibold text-ink sm:text-xl">
               No stored reports.
             </h2>
-            <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+            <p className="max-w-sm text-[13px] leading-relaxed text-muted">
               Analyze a GitHub profile while signed in and it will appear here
               automatically.
             </p>
             <Link
               to="/analyze"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20 dark:border-primary-soft/40 dark:bg-primary-soft/10 dark:text-primary-soft dark:hover:bg-primary-soft/20"
+              className="inline-flex items-center gap-1.5 rounded-[6px] border border-line px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-signal"
             >
               Analyze a profile
             </Link>

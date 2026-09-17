@@ -65,21 +65,22 @@ body {
   border-radius: 3px;
 }
 
-/* Glass card surfaces — work in both themes */
+/* Token-based surfaces. `color-mix` is used where a value needs alpha, since
+   the theme tokens are plain `var()` strings that Tailwind opacity modifiers
+   cannot split into channels. */
+.surface-error {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  background-color: color-mix(in srgb, var(--danger) 6%, var(--panel));
+}
+
+.surface-muted {
+  background-color: color-mix(in srgb, var(--ink) 5%, var(--panel));
+}
+
 .glass-surface {
-  @apply bg-slate-900/70 border border-slate-800/80 backdrop-blur-xl;
-}
-
-.dark .glass-surface {
-  @apply bg-slate-900/70 border-slate-800/80;
-}
-
-.glass-surface-light {
-  @apply bg-white/90 border border-slate-200/80 backdrop-blur-xl;
-}
-
-.dark .glass-surface-light {
-  @apply bg-slate-800/80 border-slate-700/80;
+  background-color: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(16px);
 }
 
 .fade-in {

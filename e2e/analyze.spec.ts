@@ -2,6 +2,35 @@ import { expect, test } from '@playwright/test';
 import { attachErrorCollector, dbMode, stubAvatars } from './helpers';
 
 test.describe('analyze + share error states', () => {
+  test('sign-in is reachable from the analyze page itself and closes on Escape', async ({
+    page,
+  }) => {
+    const errors = attachErrorCollector(page);
+    await page.goto('/analyze');
+
+    // The sign-in methods must be usable in place — not a detour to the
+    // marketing page. Scoped to the header: a rendered report also offers an
+    // inline sign-in hint.
+    await page
+      .getByRole('banner')
+      .getByRole('button', { name: 'Sign in', exact: true })
+      .click();
+    const dialog = page.getByRole('dialog', { name: 'Sign in' });
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByRole('button', { name: 'Sign in with GitHub' })
+    ).toBeVisible();
+    await expect(dialog.getByLabel('Email address')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    expect(
+      errors.unexpectedConsoleErrors([{ urlFragment: 'api/auth/', status: 503 }])
+    ).toEqual([]);
+    expect(errors.pageErrors).toEqual([]);
+  });
+
   test('landing page hero sends a visitor straight into a report', async ({
     page,
   }) => {
@@ -18,7 +47,7 @@ test.describe('analyze + share error states', () => {
     await expect(page.getByText('97.5%')).toBeVisible();
 
     await page.getByLabel('GitHub profile URL or username').fill('octocat');
-    await page.getByRole('button', { name: 'Analyze', exact: true }).click();
+    await page.getByRole('button', { name: 'Analyze profile', exact: true }).click();
 
     // The offer is the product: the hero hands off to the analyzer.
     await expect(page).toHaveURL(/\/analyze\?q=octocat$/);
@@ -38,7 +67,7 @@ test.describe('analyze + share error states', () => {
 
     await page.goto('/analyze');
     await page.getByLabel('GitHub profile URL or username').fill('octocat');
-    await page.getByRole('button', { name: 'Analyze Profile' }).click();
+    await page.getByRole('button', { name: 'Analyze profile' }).click();
 
     // Hero profile card: avatar + username + display name.
     await expect(page.getByRole('img', { name: 'octocat' })).toBeVisible();

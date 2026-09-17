@@ -19,23 +19,23 @@ const isGateError = (err: ApiError) =>
   err.code === 'UNAUTHORIZED' || err.code === 'CONFIG_MISSING';
 
 const analyzeLinkClass =
-  'inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20 dark:border-primary-soft/40 dark:bg-primary-soft/10 dark:text-primary-soft dark:hover:bg-primary-soft/20';
+  'inline-flex items-center gap-1.5 rounded-[6px] border border-line px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-signal';
 
 const deleteButtonClass =
-  'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-rose-300 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-rose-500/40 dark:hover:text-rose-400';
+  'inline-flex items-center justify-center rounded-[6px] border border-line px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:border-danger hover:text-danger disabled:cursor-not-allowed disabled:opacity-60';
 
 const CandidateRow: React.FC<{
   candidate: Candidate;
   deleting: boolean;
   onDelete: (id: string) => void;
 }> = ({ candidate, deleting, onDelete }) => (
-  <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 transition dark:border-slate-600 dark:bg-slate-800/50 sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex flex-col gap-2 rounded-[6px] border border-line bg-paper p-3 sm:flex-row sm:items-center sm:justify-between">
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <span className="truncate text-[13px] font-semibold text-ink">
           @{candidate.github_username}
         </span>
-        <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="font-mono text-[11px] text-muted">
           {new Date(candidate.created_at).toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'short',
@@ -44,7 +44,7 @@ const CandidateRow: React.FC<{
         </span>
       </div>
       {candidate.note && (
-        <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">
+        <p className="mt-1 line-clamp-2 text-[13px] text-muted">
           {candidate.note}
         </p>
       )}
@@ -54,7 +54,7 @@ const CandidateRow: React.FC<{
         to={`/analyze?q=${encodeURIComponent(candidate.github_username)}`}
         className={analyzeLinkClass}
       >
-        Analyze →
+        Analyze
       </Link>
       <button
         type="button"
@@ -199,13 +199,11 @@ const SavedPage = () => {
   return (
     <main className="flex flex-1 flex-col gap-4">
       <div className="space-y-1.5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-primary dark:text-primary-soft sm:text-xs">
-          Shortlist
-        </p>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-50 sm:text-2xl">
+        <p className="text-[13px] font-semibold text-ink">Shortlist</p>
+        <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
           Saved candidates
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+        <p className="text-[13px] text-muted">
           Developers you bookmarked while analyzing GitHub profiles.
         </p>
       </div>
@@ -223,13 +221,11 @@ const SavedPage = () => {
       {state.status === 'ready' && state.items.length === 0 && (
         <Card>
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center sm:py-12">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary dark:text-primary-soft">
-              Empty shortlist
-            </p>
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 sm:text-xl">
+            <p className="text-[13px] font-semibold text-ink">Empty shortlist</p>
+            <h2 className="text-lg font-semibold text-ink sm:text-xl">
               No saved candidates yet.
             </h2>
-            <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+            <p className="max-w-sm text-[13px] leading-relaxed text-muted">
               Analyze a GitHub profile and hit “Save candidate” to keep it here
               with a note.
             </p>

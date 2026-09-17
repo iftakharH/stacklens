@@ -19,4 +19,18 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    // Serves the production bundle with the SAME same-origin /api proxy that
+    // production gets from vercel.json's rewrites, so e2e/prod-smoke.spec.ts
+    // exercises the built app end to end (the dev server never can).
+    host: true,
+    port: 4173,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: process.env.API_TARGET || 'http://localhost:4000',
+        changeOrigin: true,
+      },
+    },
+  },
 });

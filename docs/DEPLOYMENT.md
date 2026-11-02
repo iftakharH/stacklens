@@ -49,16 +49,22 @@ Serverless functions are isolated instances, so in-memory rate limits are per in
 
 Add an HTTP monitor on `https://<your-domain>/health` (checks every 5 minutes, free tier). The endpoint returns `{"ok":true}` with no dependencies.
 
+**Caveat — Vercel Security Checkpoint:** if the Vercel Firewall's bot challenge is enabled on the project, non-browser clients ( uptime monitors, server-side API consumers ) get a `429` with `X-Vercel-Mitigated: challenge` even though the app is fine. Either exempt `/health` (and any server-side `/api/*` callers) from the challenge in the Vercel Firewall settings (Security → Firewall → custom rules / attack challenge mode), or point the monitor at a path the challenge does not apply to. Real browsers are never affected.
+
+## Deploy pipeline env scoping
+
+Vercel environment variables default to **all environments**, which means public preview deployments receive `DATABASE_URL`, `BETTER_AUTH_SECRET`, and the OAuth secrets on their first deploy — and would connect to the *production* Neon database from a public preview URL. Scope them: in Vercel, Settings, Environment Variables, set the secret vars (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, OAuth/Resend/DSN pairs) to **Production** only. `ALLOWED_ORIGINS` / `APP_ORIGIN` / `TRUSTED_ORIGINS` / `BETTER_AUTH_URL` can follow the same rule. Preview environments then run zero-env (degraded `503 CONFIG_MISSING` accounts) instead of touching prod data.
+
 ## 2. Deploy to Vercel
 
 1. Vercel, **Add New... -> Project**, import the GitHub repository.
 2. **Root Directory: leave it as the repo root.** Do **not** set it to `frontend/` — the root `vercel.json` is what builds the SPA *and* deploys `api/index.js` as the API function. Setting the root to `frontend/` silently breaks the entire API.
 3. Framework preset: Vite (auto-detected). Build settings come from `vercel.json`:
-   - install: `npm install && npm install --prefix frontend`
+   - install: `npm ci && npm ci --prefix frontend`
    - build: `npm run build --prefix frontend`
    - output: `frontend/dist`
    - function: `api/index.js` (`maxDuration` 60)
-4. Add environment variables (Project, Settings, Environment Variables) using the table below. Minimum viable deploy: `ALLOWED_ORIGINS=https://<your-domain>`. Full features: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL=https://<your-domain>`, `TRUSTED_ORIGINS=https://<your-domain>`, the OAuth and Resend pairs, and the Sentry DSNs.
+4. Add environment variables (Project, Settings, Environment Variables) using the table below. Minimum viable deploy: `ALLOWED_ORIGINS=https://<your-domain>`. Full features: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL=https://<your-domain>`, `TRUSTED_ORIGINS=https://<your-domain>`, the OAuth and Resend pairs, and the Sentry DSNs. Scope the secret ones to Production (see "Deploy pipeline env scoping" above).
 5. Deploy, then verify: `https://<your-domain>/health` returns `{"ok":true}`, and `/api/analyze?q=octocat` returns a report.
 
 ## 3. Environment variables
@@ -67,10 +73,10 @@ Add an HTTP monitor on `https://<your-domain>/health` (checks every 5 minutes, f
 
 | Variable | Scope | Required | Purpose |
 | -------- | ----- | -------- | ------- |
-| `ALLOWED_ORIGINS` | backend | prod: yes | CORS allowlist (comma-separated). Include your Vercel domain. `http://localhost:5173` is always allowed. |
+| `ALLOWED_ORIGINS` | backend | prod: yes | CORS allowlist (comma-separated). Include your Vercel domain. Needed only for cross-origin API callers — a same-origin deployment (SPA + API under one domain) works without it. `http://localhost:5173` is allowed automatically outside production. |
 | `GITHUB_TOKEN` | backend | recommended | Raises GitHub API rate limits (60 to 5,000 req/h). Keep server-side. |
 | `PORT` | backend | no | Default `4000`. Vercel sets it automatically. |
-| `RATE_LIMIT_ANON` / `RATE_LIMIT_AUTH` / `RATE_LIMIT_AUTH_ROUTES` | backend | no | Requests/min per client (10 / 100 / 30 by default). The auth-route limit applies to mutating auth endpoints only; session reads are never limited. |
+| `RATE_LIMIT_ANON` / `RATE_LIMIT_AUTH` / `RATE_LIMIT_AUTH_ROUTES` | backend | no | Requests/min per client (10 / 100 / 30 by default). Values below 1 or non-numeric fall back to the default. The auth-route limit applies to mutating auth endpoints only; session reads are never limited. In-memory limits are per serverless instance unless Upstash is configured. |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | backend | no | Distributed rate limiting (recommended on serverless). Both must be set. |
 | `DATABASE_URL` | backend | for accounts | Neon **pooled** connection string. Enables auth, candidates, history, share. |
 | `BETTER_AUTH_SECRET` | backend | with `DATABASE_URL` | Session signing key. Generate with `openssl rand -base64 32`. |
@@ -93,25 +99,27 @@ The script is idempotent. It creates the Better Auth tables (`user`, `session`, 
 
 ## 5. CI/CD
 
-Two workflows live in `.github/workflows/`. Both stay green (graceful skips) before any secret is configured.
+Two workflows live in `.github/workflows/`.
 
 ### `ci.yml`
 
 - **Triggers:** every pull request plus pushes to `main`.
 - **Concurrency:** new pushes cancel a PR's in-progress run; main runs are never cancelled.
-- **quality job** (ubuntu, Node 20, npm cache):
+- **quality job** (ubuntu, Node 24 — matched to the Vercel runtime, npm cache):
   1. `npm ci` (root) + `npm ci --prefix frontend`
   2. Lint root + frontend
   3. Build frontend (`tsc -b && vite build`)
-  4. `npm test` against a **postgres:16 service container** (`pg_isready` health-checked, `TEST_DATABASE_URL` + `NODE_ENV=test`) — so all **144 tests** run in CI, not just 124.
-- **e2e job:** installs Playwright browsers, then runs `npm run test:e2e` (dev server) and `npm run test:e2e:prod` (production-build smoke).
-- **migrate job** (needs `quality`, **push to main only**): runs `node db/migrate.js` with the `DATABASE_URL` secret. If the secret is absent it prints `DATABASE_URL secret not set — skipping migration` and exits 0.
+  4. `npm test` against a **postgres:16 service container** (`pg_isready` health-checked, `TEST_DATABASE_URL` + `NODE_ENV=test`)
+  5. Fails if vitest reports any skipped test (the DB gate must never silently shrink coverage).
+- **dependencies job:** `npm audit --audit-level=high` for the root and frontend trees. Fails on any high or critical advisory; moderate findings (currently the eslint/minimatch dev-tool advisories) stay green.
+- **e2e job:** starts its own postgres:16 service, applies migrations, installs Playwright browsers, then runs `npm run test:e2e` (dev server) and `npm run test:e2e:prod` (production-build smoke) — including the DB-gated signed-in specs. Failed runs upload screenshots/traces as artifacts.
+- **migrate job** (needs quality + dependencies + e2e, **push to main only**): runs `node db/migrate.js` with the `DATABASE_URL` secret. **Fails closed**: if the secret is absent, the job is red — a silent skip once meant `main` shipped without schema verification.
 
 ### `backup.yml`
 
-- **Triggers:** daily at 03:00 UTC (`cron: 0 3 * * *`) plus manual `workflow_dispatch`.
-- If `DATABASE_URL` and the three R2 secrets are set: `pg_dump --no-owner --format=custom` -> `rclone copy` to R2 bucket `stacklens-backup` -> prune dumps older than 14 days (`rclone delete --min-age 14d`).
-- If any secret is missing: a `::notice::` message and exit 0 (green skip).
+- **Triggers:** daily at 03:00 UTC (`cron: '0 3 * * *'`) plus manual `workflow_dispatch`.
+- If `DATABASE_URL` and the three R2 secrets are set: `pg_dump --no-owner --format=custom` (pinned `postgresql-client-16`, matching the server major) -> `rclone copy` to R2 bucket `stacklens-backup` -> prune dumps older than 14 days (`rclone delete --min-age 14d`).
+- If any secret is missing: the run **fails loudly** on scheduled runs (a green skip once let backups stop silently for days). Manual dispatch runs remain exit-0 so first-time setup can be probed.
 - rclone is configured via `RCLONE_CONFIG_R2_*` env vars (S3-compatible, Cloudflare provider) — no state on the runner.
 
 ### Required repo secrets
@@ -129,7 +137,7 @@ Settings, Secrets and variables, Actions, **New repository secret**:
 
 Settings, Branches, add a branch protection rule for `main`:
 
-1. **Require status checks to pass before merging** — select the **quality** job; enable "Require branches to be up to date before merging".
+1. **Require status checks to pass before merging** — select the **quality**, **dependencies**, and **e2e** jobs; enable "Require branches to be up to date before merging".
 2. **Require linear history** (and use "Squash and merge" in the merge dialog).
 3. Optionally: restrict pushes that match no PR to `main`.
 
@@ -151,6 +159,7 @@ pg_restore --no-owner --dbname "postgresql://user:pass@host/db" ./backups/stackl
 
 | Symptom | Cause and fix |
 | ------- | ------------- |
+| `429` with header `X-Vercel-Mitigated: challenge` on `/health` or `/api/*` (monitor returns "down" while the site is actually up) | Vercel's bot challenge applies to non-browser clients. Exempt `/health` (and server-side API callers) in the Vercel Firewall, or use a path the challenge does not cover (see monitoring section). |
 | Browser console: CORS error on `/api/*` | The request isn't same-origin. In dev, always use the Vite server (5173), which proxies `/api`. In prod, make sure you deployed the **repo root** (not `frontend/`) so `/api/*` rewrites to the function, and set `ALLOWED_ORIGINS` to your domain. |
 | `503 CONFIG_MISSING` on `/api/auth/*`, `/api/candidates`, `/api/history`, `/api/share` | The feature's env isn't configured on the server: `DATABASE_URL` + `BETTER_AUTH_SECRET` for auth and the signed-in features. Add them (Vercel, Settings, Environment Variables) and redeploy. |
 | `503 CONFIG_MISSING` on `GET /api/share/:token` | `DATABASE_URL` missing — public share lookups still need the DB. |

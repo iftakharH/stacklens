@@ -26,7 +26,7 @@ StackLens is a complete, self-hostable tool, deliberately small. Out of scope by
 | Layer | Technology |
 | ----- | ---------- |
 | Frontend | React 19, TypeScript 5.9, Vite 8, Tailwind CSS 3.4, react-router 7. Self-hosted variable fonts (Archivo, Martian Mono) via `@fontsource-variable`; design tokens in `frontend/src/index.css` and `frontend/tailwind.config.js`. |
-| Backend | Node 20+, Express 5 (CommonJS), deployed as a single Vercel serverless function (`api/index.js`, `maxDuration 60`). |
+| Backend | Node 24+, Express 5 (CommonJS), deployed as a single Vercel serverless function (`api/index.js`, `maxDuration 60`). |
 | Data | PostgreSQL (Neon) via `pg`, no ORM. Migrations are plain SQL in `db/migrations/`, applied by `npm run migrate`. |
 | Auth | Better Auth 1.7 with database sessions: GitHub OAuth + email magic link (Resend). Entirely env-gated; without config the app still boots and `/api/auth/*` returns `503 CONFIG_MISSING`. |
 | Rate limiting | In-memory by default, Upstash Redis when configured: 10/min anonymous and 100/min authenticated on `/api/*`; 30/min on mutating auth endpoints only (session reads are never limited). |
@@ -48,12 +48,12 @@ stacklens/
 ├── frontend/     # React 19 + TypeScript SPA (Vite, Tailwind, own lint config)
 ├── docs/         # ARCHITECTURE.md, DEPLOYMENT.md
 ├── vercel.json   # Function + rewrites: /api/*, /health, SPA fallback
-└── package.json  # Root scripts and dependencies (Node >= 20)
+└── package.json  # Root scripts and dependencies (Node >= 24)
 ```
 
 ## Local development
 
-Prerequisites: Node 20+ and npm. Docker is optional, only needed for the DB-gated tests.
+Prerequisites: Node 24+ and npm (24 is what CI tests and what Vercel runs — keep local, CI, and serverless on the same major). Docker is optional, only needed for the DB-gated tests.
 
 ```bash
 npm install
@@ -97,7 +97,7 @@ Nothing is required to boot. `.env.example` is the annotated reference; producti
 
 ## API
 
-All JSON responses use one envelope: success `{ ok: true, data }`, failure `{ ok: false, error: { code, message, retryable, status } }`.
+All JSON responses use one envelope: success `{ ok: true, data }`, failure `{ ok: false, error: { code, message, retryable, status } }`. Two deliberate exceptions: `/health` returns `{ ok: true }` only (monitor-friendly), and `/api/auth/*` speaks Better Auth's own response shapes.
 
 | Method | Path | Auth | Purpose |
 | ------ | ---- | ---- | ------- |
@@ -115,7 +115,7 @@ All JSON responses use one envelope: success `{ ok: true, data }`, failure `{ ok
 ## Testing
 
 ```bash
-npm test                # 124 pass, 20 DB-gated skipped (zero env)
+npm test                # 125 pass, 20 DB-gated skipped (zero env)
 npm run test:unit       # engine + validation
 npm run test:integration
 npm run test:watch
@@ -125,7 +125,7 @@ npm run test:e2e:prod   # builds the bundle, serves it via vite preview on :4173
 npm run lint            # root eslint (frontend: npm --prefix frontend run lint)
 ```
 
-The 20 skipped suites run against `TEST_DATABASE_URL`; a `postgres:16-alpine` Docker recipe is in `.env.example`. CI runs all 144 tests against a Postgres service container. Playwright covers dev-server E2E plus a production-build smoke test (added after a production-only crash once shipped), and axe-core checks accessibility.
+The 20 skipped suites run against `TEST_DATABASE_URL`; a `postgres:16-alpine` Docker recipe is in `.env.example`. CI runs all 145 tests against a Postgres service container. Playwright covers dev-server E2E plus a production-build smoke test (added after a production-only crash once shipped), and axe-core checks accessibility.
 
 ## Deployment
 

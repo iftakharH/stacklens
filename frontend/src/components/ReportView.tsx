@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import type { Report } from '../types';
 import { languageColor } from '../lib/languages';
-import { Card, ScoreRow, StatCard } from './ui';
+import LanguageBar from './LanguageBar';
+import { Field, Gauge, Readout, Scale } from './ui';
 
 type ReportViewProps = {
   /** The analyzed GitHub username (the report renders report.overview.username). */
@@ -9,8 +10,22 @@ type ReportViewProps = {
   report: Report;
 };
 
-// Renders a full computed report. Extracted verbatim from the original
-// App.tsx analyze result so the analyze page and shared links look identical.
+// The hireability engine's own boundaries (lib/report.js): <3 Beginner,
+// <5 Developing, <7 Junior Ready, <8.5 Strong Junior, then Hireable. Only the
+// thresholds are printed on the scale; the band that applies is named once, in
+// the chip beneath it.
+const BANDS = [
+  { at: 3, label: 'Beginner' },
+  { at: 5, label: 'Developing' },
+  { at: 7, label: 'Junior Ready' },
+  { at: 8.5, label: 'Strong Junior' },
+];
+
+/**
+ * The reading. Set as a calibration readout on the same card as the landing
+ * page: identity, then measured values on printed scales, then the spectrum,
+ * then the repositories and the derived insights. Nothing is boxed.
+ */
 const ReportView: React.FC<ReportViewProps> = ({ report }) => {
   const overallLabel = useMemo(() => {
     const score = report.scores.overall;
@@ -20,244 +35,264 @@ const ReportView: React.FC<ReportViewProps> = ({ report }) => {
     return 'Early-stage footprint';
   }, [report]);
 
-  return (
-    <>
-      {/* AI-like Summary */}
-      <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-ink">Smart Summary</p>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted sm:text-sm">
-              {report.summary}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="inline-flex items-center rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink">
-              {report.scores.hireability}
-            </span>
-          </div>
-        </div>
-      </Card>
+  const totalStars =
+    report.meta.total_stars ??
+    report.highlights.reduce((sum, repo) => sum + repo.stars, 0);
 
-      {/* Hero profile card */}
-      <Card className="overflow-hidden">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start md:gap-5">
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <img
-              src={report.overview.avatar_url}
-              alt={report.overview.username}
-              className="h-20 w-20 shrink-0 rounded-[6px] border border-line object-cover sm:h-24 sm:w-24"
-            />
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <a
-                  href={report.overview.html_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-base font-semibold text-ink transition-colors hover:text-signal sm:text-lg"
-                >
-                  {report.overview.name || report.overview.username}
-                </a>
-                <span className="rounded-full border border-line bg-paper px-2 py-0.5 font-mono text-[11px] text-muted">
-                  @{report.overview.username}
-                </span>
-              </div>
-              {report.overview.bio && (
-                <p className="line-clamp-2 text-[13px] text-muted sm:line-clamp-3">
-                  {report.overview.bio}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-muted">
-                {report.overview.created_at && (
-                  <span>
-                    Member since{' '}
-                    {new Date(report.overview.created_at).toLocaleDateString(
-                      undefined,
-                      { month: 'short', year: 'numeric' }
-                    )}
-                  </span>
-                )}
-                <span>{report.overview.public_repos} repos</span>
-                <span>
-                  {report.stack.language_distribution.length} languages
-                </span>
-              </div>
+  return (
+    <div className="space-y-8 sm:space-y-10">
+      {/* ---------------------------------------------------------------- */}
+      <Field title="Smart Summary" meta="Rule-based · no model">
+        <p className="max-w-[64ch] text-[15px] leading-[1.65] text-ink2 sm:text-[17px]">
+          {report.summary}
+        </p>
+      </Field>
+
+      {/* ----------------------------------------------------------------
+          The subject, and the one number that summarises the reading.
+      ---------------------------------------------------------------- */}
+      <section className="border-t border-line-strong pt-5">
+        <div className="flex flex-wrap items-start gap-x-7 gap-y-6">
+          <img
+            src={report.overview.avatar_url}
+            alt={report.overview.username}
+            className="h-20 w-20 shrink-0 border border-line-strong object-cover sm:h-24 sm:w-24"
+          />
+
+          <div className="min-w-0 flex-1 basis-[18rem]">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <a
                 href={report.overview.html_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-[6px] border border-line px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-signal"
+                className="display-tight text-[clamp(1.15rem,2.4vw,1.6rem)] text-ink transition-colors hover:text-signal"
               >
-                View GitHub profile
+                {report.overview.name || report.overview.username}
               </a>
+              <span className="num text-[12px] text-muted">
+                @{report.overview.username}
+              </span>
             </div>
+
+            {report.overview.bio && (
+              <p className="mt-2.5 line-clamp-2 max-w-[62ch] text-[13px] leading-[1.6] text-muted sm:line-clamp-3">
+                {report.overview.bio}
+              </p>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5">
+              {report.overview.created_at && (
+                <span className="rail-sm text-muted">
+                  Member since{' '}
+                  {new Date(report.overview.created_at).toLocaleDateString(
+                    undefined,
+                    { month: 'short', year: 'numeric' }
+                  )}
+                </span>
+              )}
+              <span className="rail-sm text-muted">
+                {report.overview.public_repos} repos
+              </span>
+              <span className="rail-sm text-muted">
+                {report.stack.language_distribution.length} languages
+              </span>
+            </div>
+
+            <a
+              href={report.overview.html_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm mt-5"
+            >
+              View GitHub profile
+            </a>
           </div>
-          <div className="ml-auto flex shrink-0 flex-col items-end gap-1 border-t border-line pt-4 sm:border-t-0 sm:border-l sm:pl-5 sm:pt-0">
-            <span className="text-[11px] font-semibold text-muted">
-              Overall score
-            </span>
-            <div className="flex items-baseline gap-1">
-              <span className="font-mono text-2xl font-bold tabular-nums text-ink sm:text-3xl">
+
+          <div className="w-full shrink-0 basis-[14rem] border-t border-line pt-4 sm:w-[14rem] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+            <p className="rail text-muted">Overall score</p>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="num text-[2.4rem] font-semibold leading-none text-ink">
                 {report.scores.overall.toFixed(1)}
               </span>
-              <span className="text-[13px] text-muted">/ 10</span>
+              <span className="num text-[12px] text-muted">/ 10</span>
             </div>
-            <p className="text-[12px] text-muted">{overallLabel}</p>
+            <p className="mt-2 text-[12px] text-muted">{overallLabel}</p>
+            <div className="mt-4">
+              <Scale
+                value={report.scores.overall}
+                label="Overall score"
+                bands={BANDS}
+                compact
+              />
+            </div>
+            <div className="relative mt-1 h-3.5" aria-hidden="true">
+              {BANDS.map((band) => (
+                <span
+                  key={band.at}
+                  className="num absolute -translate-x-1/2 text-[10px] text-muted"
+                  style={{ left: `${Math.min(band.at * 10, 96)}%` }}
+                >
+                  {band.at}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </Card>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 sm:gap-3">
-        <StatCard label="Followers" value={report.overview.followers} />
-        <StatCard label="Following" value={report.overview.following ?? '—'} />
-        <StatCard label="Public repos" value={report.overview.public_repos} />
-        <StatCard
-          label="Total stars"
-          value={
-            report.meta.total_stars ??
-            report.highlights.reduce((s, r) => s + r.stars, 0)
-          }
-        />
-        <StatCard
-          label="Account age"
-          value={
-            report.overview.account_age_years != null
-              ? `${report.overview.account_age_years}y`
-              : '—'
-          }
-        />
-      </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-line pt-3">
+          <p className="rail-sm text-muted">Band thresholds · 0–10 score</p>
+          <p className="inline-flex shrink-0 items-center gap-2 border border-signal px-2 py-1">
+            <span className="h-1.5 w-1.5 bg-signal" aria-hidden="true" />
+            <span className="rail-sm text-ink">
+              {report.scores.hireability}
+            </span>
+          </p>
+        </div>
+      </section>
 
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
-        <Card title="Developer Overview">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] sm:gap-y-4">
-            <div>
-              <dt className="text-muted">Followers</dt>
-              <dd className="mt-0.5 font-semibold text-ink">
-                {report.overview.followers}
-              </dd>
+      {/* ----------------------------------------------------------------
+          Headline counts, set as a graduated strip.
+      ---------------------------------------------------------------- */}
+      <section className="border-y border-line-strong py-4">
+        <dl className="grid grid-cols-2 gap-y-5 sm:grid-cols-3 md:grid-cols-5">
+          <div className="min-w-0 pr-4">
+            <Readout label="Followers" value={report.overview.followers} />
+          </div>
+          <div className="min-w-0 border-l border-line pl-4 sm:border-r md:pl-5">
+            <Readout label="Following" value={report.overview.following ?? '—'} />
+          </div>
+          <div className="min-w-0 pr-4 md:border-r md:border-line md:pl-5">
+            <Readout label="Public repos" value={report.overview.public_repos} />
+          </div>
+          <div className="min-w-0 border-l border-line pl-4 md:border-r md:pl-5">
+            <Readout label="Total stars" value={totalStars} />
+          </div>
+          <div className="col-span-2 min-w-0 border-t border-line pr-4 pt-4 sm:col-span-1 sm:border-t-0 sm:pt-0 md:pl-5">
+            <Readout
+              label="Account age"
+              value={
+                report.overview.account_age_years != null
+                  ? `${report.overview.account_age_years}y`
+                  : '—'
+              }
+            />
+          </div>
+        </dl>
+      </section>
+
+      {/* ----------------------------------------------------------------
+          Two ledgers: the raw overview, and the three sub-scores.
+      ---------------------------------------------------------------- */}
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
+        <Field title="Developer Overview" meta="Public fields">
+          <dl className="ledger border-t border-line">
+            <div className="flex items-baseline justify-between gap-4 py-2.5">
+              <dt className="text-[13px] text-muted">Followers</dt>
+              <dd className="num text-[13px] text-ink">{report.overview.followers}</dd>
             </div>
-            <div>
-              <dt className="text-muted">Following</dt>
-              <dd className="mt-0.5 font-semibold text-ink">
+            <div className="flex items-baseline justify-between gap-4 py-2.5">
+              <dt className="text-[13px] text-muted">Following</dt>
+              <dd className="num text-[13px] text-ink">
                 {report.overview.following ?? '—'}
               </dd>
             </div>
-            <div>
-              <dt className="text-muted">Public repos</dt>
-              <dd className="mt-0.5 font-semibold text-ink">
+            <div className="flex items-baseline justify-between gap-4 py-2.5">
+              <dt className="text-[13px] text-muted">Public repos</dt>
+              <dd className="num text-[13px] text-ink">
                 {report.overview.public_repos}
               </dd>
             </div>
-            <div>
-              <dt className="text-muted">Account age</dt>
-              <dd className="mt-0.5 font-semibold text-ink">
+            <div className="flex items-baseline justify-between gap-4 py-2.5">
+              <dt className="text-[13px] text-muted">Account age</dt>
+              <dd className="num text-[13px] text-ink">
                 {report.overview.account_age_years != null
                   ? `${report.overview.account_age_years} years`
                   : '—'}
               </dd>
             </div>
-            <div>
-              <dt className="text-muted">Last activity</dt>
-              <dd className="mt-0.5 font-semibold text-ink">
+            <div className="flex items-baseline justify-between gap-4 py-2.5">
+              <dt className="text-[13px] text-muted">Last activity</dt>
+              <dd className="num text-[13px] text-ink">
                 {report.overview.last_activity_days != null
                   ? `${report.overview.last_activity_days} days ago`
                   : '—'}
               </dd>
             </div>
-            <div>
-              <dt className="text-muted">Languages</dt>
-              <dd className="mt-0.5 font-semibold text-ink">
+            <div className="flex items-baseline justify-between gap-4 py-2.5">
+              <dt className="text-[13px] text-muted">Languages</dt>
+              <dd className="num text-[13px] text-ink">
                 {report.stack.language_distribution.length}
               </dd>
             </div>
           </dl>
-        </Card>
+        </Field>
 
-        <Card title="Developer Score">
-          <div className="space-y-3 sm:space-y-4">
-            <ScoreRow label="Activity" score={report.scores.activity} />
-            <ScoreRow label="Stack diversity" score={report.scores.stackDiversity} />
-            <ScoreRow label="Project quality" score={report.scores.projectQuality} />
+        <Field title="Developer Score" meta="0 – 10">
+          <div className="space-y-5 border-t border-line pt-4">
+            <Gauge label="Activity" score={report.scores.activity} />
+            <Gauge label="Stack diversity" score={report.scores.stackDiversity} />
+            <Gauge label="Project quality" score={report.scores.projectQuality} />
           </div>
-        </Card>
+        </Field>
       </div>
 
-      <div className="grid items-start gap-3 sm:grid-cols-2 sm:gap-4">
-        <Card title="Stack Analysis">
-          <div className="space-y-3">
+      {/* ----------------------------------------------------------------
+          The spectrum, then the repositories.
+      ---------------------------------------------------------------- */}
+      <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-10">
+        <Field title="Stack Analysis" meta="By repository size">
+          <div className="border-t border-line pt-4">
             <div className="flex flex-wrap gap-2">
               {report.stack.primary_language && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px] font-medium text-ink">
+                <span className="inline-flex items-center gap-2 border border-line-strong px-2.5 py-1">
                   <span
                     aria-hidden="true"
-                    className="h-2.5 w-2.5 rounded-[2px]"
+                    className="h-2.5 w-2.5"
                     style={{
                       backgroundColor: languageColor(report.stack.primary_language),
                     }}
                   />
-                  Primary: {report.stack.primary_language}
+                  <span className="text-[12px] font-medium text-ink">
+                    Primary: {report.stack.primary_language}
+                  </span>
                 </span>
               )}
               {report.stack.secondary_language && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px] font-medium text-muted">
+                <span className="inline-flex items-center gap-2 border border-line px-2.5 py-1">
                   <span
                     aria-hidden="true"
-                    className="h-2.5 w-2.5 rounded-[2px]"
+                    className="h-2.5 w-2.5"
                     style={{
                       backgroundColor: languageColor(report.stack.secondary_language),
                     }}
                   />
-                  Secondary: {report.stack.secondary_language}
+                  <span className="text-[12px] font-medium text-muted">
+                    Secondary: {report.stack.secondary_language}
+                  </span>
                 </span>
               )}
             </div>
+
             {report.stack.language_distribution.length === 0 ? (
-              <p className="text-[13px] text-muted">No language data yet.</p>
+              <p className="mt-4 text-[13px] text-muted">No language data yet.</p>
             ) : (
-              <>
-                <div className="h-2.5 overflow-hidden rounded-full bg-line">
-                  <div className="flex h-full">
-                    {report.stack.language_distribution.map((bucket) => (
-                      <div
-                        key={bucket.language}
-                        style={{
-                          width: `${bucket.percentage}%`,
-                          backgroundColor: languageColor(bucket.language),
-                        }}
-                        className="shrink-0 transition-all"
-                      />
-                    ))}
-                  </div>
-                </div>
-                <ul className="flex flex-wrap gap-1.5 text-[11px]">
-                  {report.stack.language_distribution.map((bucket) => (
-                    <li
-                      key={bucket.language}
-                      className="inline-flex items-center gap-1 rounded-full border border-line bg-paper px-2 py-0.5 text-muted"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="h-2 w-2 rounded-[2px]"
-                        style={{ backgroundColor: languageColor(bucket.language) }}
-                      />
-                      <span className="text-ink">{bucket.language}</span>
-                      <span className="font-mono tabular-nums text-muted">
-                        {bucket.percentage}%
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
+              <div className="mt-5">
+                <LanguageBar
+                  items={report.stack.language_distribution}
+                  height={26}
+                  legendLayout="scale"
+                />
+              </div>
             )}
           </div>
-        </Card>
+        </Field>
 
-        <Card title="Repository Highlights">
-          <div className="space-y-2 sm:space-y-2.5">
+        <Field title="Repository Highlights" meta="Top 5 by stars">
+          <div className="ledger border-t border-line">
             {report.highlights.length === 0 ? (
-              <p className="text-[13px] text-muted">No public repositories yet.</p>
+              <p className="py-3 text-[13px] text-muted">
+                No public repositories yet.
+              </p>
             ) : (
               report.highlights.map((repo) => (
                 <a
@@ -265,27 +300,28 @@ const ReportView: React.FC<ReportViewProps> = ({ report }) => {
                   href={repo.html_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col gap-1 rounded-[6px] border border-line bg-paper p-3 transition-colors hover:border-signal"
+                  className="group block py-3 transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="min-w-0 truncate text-[13px] font-semibold text-ink">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="min-w-0 truncate text-[13px] font-semibold text-ink transition-colors group-hover:text-signal">
                       {repo.name}
                     </p>
-                    <span className="shrink-0 rounded-[4px] border border-line px-1.5 py-0.5 font-mono text-[11px] text-muted">
+                    <span className="num shrink-0 text-[11px] text-muted">
                       ★ {repo.stars}
                     </span>
                   </div>
                   {repo.description && (
-                    <p className="line-clamp-2 text-[12px] text-muted">
+                    <p className="mt-1 line-clamp-2 max-w-[52ch] text-[12px] leading-[1.55] text-muted">
                       {repo.description}
                     </p>
                   )}
-                  <div className="flex items-center justify-between text-[11px] text-muted">
-                    <span>{repo.language || 'Other'}</span>
+                  <div className="mt-1.5 flex items-center justify-between gap-3">
+                    <span className="rail-sm text-muted">
+                      {repo.language || 'Other'}
+                    </span>
                     {repo.updated_at && (
-                      <span>
-                        Updated{' '}
-                        {new Date(repo.updated_at).toLocaleDateString()}
+                      <span className="rail-sm text-muted">
+                        Updated {new Date(repo.updated_at).toLocaleDateString()}
                       </span>
                     )}
                   </div>
@@ -293,27 +329,41 @@ const ReportView: React.FC<ReportViewProps> = ({ report }) => {
               ))
             )}
           </div>
-        </Card>
-
-        <Card title="Developer Insights" className="sm:col-span-2">
-          <ul className="space-y-2 text-[13px] text-muted">
-            {report.insights.length === 0 ? (
-              <li className="flex gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-line" />
-                No strong signals yet. More activity and varied repos unlock richer insights.
-              </li>
-            ) : (
-              report.insights.map((insight, idx) => (
-                <li key={idx} className="flex gap-2">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-signal" />
-                  <span>{insight}</span>
-                </li>
-              ))
-            )}
-          </ul>
-        </Card>
+        </Field>
       </div>
-    </>
+
+      {/* ---------------------------------------------------------------- */}
+      <Field title="Developer Insights" meta={`${report.insights.length} found`}>
+        <ul className="ledger border-t border-line">
+          {report.insights.length === 0 ? (
+            <li className="flex gap-3 py-2.5 text-[13px] text-muted">
+              <span
+                aria-hidden="true"
+                className="mt-2 h-1 w-3 shrink-0 bg-line-strong"
+              />
+              <span>
+                No strong signals yet. More activity and varied repos unlock
+                richer insights.
+              </span>
+            </li>
+          ) : (
+            report.insights.map((insight, idx) => (
+              <li key={idx} className="flex gap-3 py-2.5 text-[13px] text-ink2">
+                <span
+                  aria-hidden="true"
+                  className="mt-2 h-1 w-3 shrink-0 bg-signal"
+                />
+                <span className="max-w-[70ch] leading-[1.6]">{insight}</span>
+              </li>
+            ))
+          )}
+        </ul>
+      </Field>
+
+      <p className="mt-8 border-t border-line pt-4 text-[11px] leading-[1.7] text-muted">
+        Computed from public repositories · no model, no opinion
+      </p>
+    </div>
   );
 };
 

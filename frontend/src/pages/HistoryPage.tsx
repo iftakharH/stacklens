@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authClient } from '../api/auth';
 import {
@@ -9,7 +9,7 @@ import {
 import type { HistoryItem, StoredReport } from '../types';
 import ErrorCard from '../components/ErrorCard';
 import ReportView from '../components/ReportView';
-import { Card, SignInRequiredCard, SkeletonPulse } from '../components/ui';
+import { EmptyField, SignInRequiredCard, SkeletonPulse } from '../components/ui';
 
 const GATE_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'Sign in to see your report history.',
@@ -19,9 +19,6 @@ const GATE_MESSAGES: Record<string, string> = {
 const isGateError = (err: ApiError) =>
   err.code === 'UNAUTHORIZED' || err.code === 'CONFIG_MISSING';
 
-const backLinkClass =
-  'inline-flex items-center gap-1.5 rounded-[6px] border border-line px-3 py-2 text-[13px] font-medium text-ink transition-colors hover:border-signal';
-
 const HistoryRow: React.FC<{
   item: HistoryItem;
   onOpen: (id: string) => void;
@@ -29,13 +26,13 @@ const HistoryRow: React.FC<{
   <button
     type="button"
     onClick={() => onOpen(item.id)}
-    className="flex w-full flex-col gap-2 rounded-[6px] border border-line bg-paper p-3 text-left transition-colors hover:border-signal sm:flex-row sm:items-center sm:justify-between"
+    className="group flex w-full flex-col gap-2 py-3 text-left sm:flex-row sm:items-center sm:justify-between"
   >
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <span className="truncate text-[13px] font-semibold text-ink">
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+      <span className="num truncate text-[13px] font-semibold text-ink transition-colors group-hover:text-signal">
         @{item.github_username}
       </span>
-      <span className="font-mono text-[11px] text-muted">
+      <span className="rail-sm text-muted">
         {new Date(item.created_at).toLocaleDateString(undefined, {
           year: 'numeric',
           month: 'short',
@@ -43,15 +40,15 @@ const HistoryRow: React.FC<{
         })}
       </span>
     </div>
-    <div className="flex shrink-0 items-center gap-3">
+    <div className="flex shrink-0 items-center gap-4">
       {item.hireability && (
-        <span className="inline-flex items-center rounded-full border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink">
+        <span className="rail-sm border border-line px-2 py-1 text-ink2">
           {item.hireability}
         </span>
       )}
-      <span className="font-mono text-lg font-bold tabular-nums text-ink">
+      <span className="num text-[15px] font-semibold text-ink">
         {item.overall != null ? item.overall.toFixed(1) : '—'}
-        <span className="text-[13px] font-medium text-muted"> / 10</span>
+        <span className="ml-1 text-[11px] font-normal text-muted">/ 10</span>
       </span>
     </div>
   </button>
@@ -69,6 +66,7 @@ const HistoryPage = () => {
 
   const [state, setState] = useState<HistoryState>({ status: 'loading' });
   const [reloadToken, setReloadToken] = useState(0);
+  const openSeq = useRef(0);
 
   // Sub-view: the stored report opened from the list.
   const [selected, setSelected] = useState<{
@@ -116,9 +114,13 @@ const HistoryPage = () => {
   }, [sessionPending, signedIn, reloadToken]);
 
   const openReport = useCallback(async (id: string) => {
+    // Selection order guard: a slow earlier fetch must never overwrite a
+    // newer selection — every open carries a ticket, only the newest wins.
+    const ticket = ++openSeq.current;
     setSelected({ id, status: 'loading' });
     try {
       const report = await getHistoryReport(id);
+      if (ticket !== openSeq.current) return;
       setSelected({ id, status: 'ready', report });
     } catch (err) {
       const error =
@@ -130,6 +132,7 @@ const HistoryPage = () => {
               retryable: true,
               message: 'Could not open the stored report.',
             });
+      if (ticket !== openSeq.current) return;
       setSelected({ id, status: 'error', error });
     }
   }, []);
@@ -139,15 +142,15 @@ const HistoryPage = () => {
   // then show the data-loading skeleton for signed-in users.
   if (sessionPending) {
     return (
-      <main className="flex flex-1 flex-col gap-4">
-        <SkeletonPulse label="Loading your history…" />
+      <main className="flex flex-1 flex-col">
+        <SkeletonPulse label="Loading your history" />
       </main>
     );
   }
 
   if (!signedIn) {
     return (
-      <main className="flex flex-1 flex-col gap-4">
+      <main className="flex flex-1 flex-col">
         <SignInRequiredCard message={GATE_MESSAGES.UNAUTHORIZED} />
       </main>
     );
@@ -155,25 +158,25 @@ const HistoryPage = () => {
 
   if (state.status === 'loading' && !selected) {
     return (
-      <main className="flex flex-1 flex-col gap-4">
-        <SkeletonPulse label="Loading your history…" />
+      <main className="flex flex-1 flex-col">
+        <SkeletonPulse label="Loading your history" />
       </main>
     );
   }
 
   if (selected) {
     return (
-      <main className="flex flex-1 flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
+      <main className="flex flex-1 flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-strong pt-4">
           <button
             type="button"
             onClick={() => setSelected(null)}
-            className={backLinkClass}
+            className="btn btn-sm"
           >
             ← Back to history
           </button>
           {selected.status === 'ready' && selected.report && (
-            <span className="text-[13px] text-muted">
+            <span className="rail-sm text-muted">
               Analyzed{' '}
               {new Date(selected.report.created_at).toLocaleString(undefined, {
                 dateStyle: 'medium',
@@ -184,7 +187,7 @@ const HistoryPage = () => {
         </div>
 
         {selected.status === 'loading' && (
-          <SkeletonPulse label="Opening stored report…" />
+          <SkeletonPulse label="Opening stored report" />
         )}
         {selected.status === 'error' && selected.error && (
           <ErrorCard
@@ -193,29 +196,32 @@ const HistoryPage = () => {
           />
         )}
         {selected.status === 'ready' && selected.report && (
-          <div className="space-y-3 sm:space-y-4">
-            <ReportView
-              username={selected.report.username}
-              report={selected.report.report}
-            />
-          </div>
+          <ReportView
+            username={selected.report.username}
+            report={selected.report.report}
+          />
         )}
       </main>
     );
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4">
-      <div className="space-y-1.5">
-        <p className="text-[13px] font-semibold text-ink">Report history</p>
-        <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
-          Profiles you analyzed
-        </h2>
-        <p className="text-[13px] text-muted">
+    <main className="flex flex-1 flex-col gap-6">
+      <header className="border-t border-line-strong pt-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h2 className="display-tight text-[clamp(1.3rem,2.6vw,1.9rem)] text-ink">
+            Profiles you analyzed
+          </h2>
+          <span className="rail-sm text-muted">
+            {state.status === 'ready' ? `${state.items.length} stored` : '—'}
+          </span>
+        </div>
+        <p className="mt-2 max-w-[62ch] text-[13px] leading-relaxed text-muted">
           Every profile you analyze while signed in is stored here — click one
           to reopen the full report.
         </p>
-      </div>
+        <div aria-hidden="true" className="ticks-x-subtle mt-3" />
+      </header>
 
       {state.status === 'error' && (
         <ErrorCard
@@ -228,38 +234,28 @@ const HistoryPage = () => {
       )}
 
       {state.status === 'ready' && state.items.length === 0 && (
-        <Card>
-          <div className="flex flex-col items-center justify-center gap-3 py-10 text-center sm:py-12">
-            <p className="text-[13px] font-semibold text-ink">Nothing here yet</p>
-            <h2 className="text-lg font-semibold text-ink sm:text-xl">
-              No stored reports.
-            </h2>
-            <p className="max-w-sm text-[13px] leading-relaxed text-muted">
-              Analyze a GitHub profile while signed in and it will appear here
-              automatically.
-            </p>
-            <Link
-              to="/analyze"
-              className="inline-flex items-center gap-1.5 rounded-[6px] border border-line px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-signal"
-            >
+        <EmptyField
+          kicker="History · empty"
+          heading="No stored reports."
+          body="Analyze a GitHub profile while signed in and it will appear here automatically."
+          action={
+            <Link to="/analyze" className="btn btn-sm">
               Analyze a profile
             </Link>
-          </div>
-        </Card>
+          }
+        />
       )}
 
       {state.status === 'ready' && state.items.length > 0 && (
-        <Card>
-          <div className="space-y-2 sm:space-y-2.5">
-            {state.items.map((item) => (
-              <HistoryRow
-                key={item.id}
-                item={item}
-                onOpen={(id) => void openReport(id)}
-              />
-            ))}
-          </div>
-        </Card>
+        <div className="ledger border-t border-line-strong">
+          {state.items.map((item) => (
+            <HistoryRow
+              key={item.id}
+              item={item}
+              onOpen={(id) => void openReport(id)}
+            />
+          ))}
+        </div>
       )}
     </main>
   );

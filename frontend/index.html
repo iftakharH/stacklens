@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -8,7 +8,25 @@
       name="description"
       content="StackLens reads a public GitHub profile and returns a one-page developer report: language mix, activity, project quality and a hireability signal."
     />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0e17" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e7eaef" />
     <title>StackLens — Read the work, not the resume</title>
+    <script>
+      // Apply the stored theme before first paint so the calibration card never
+      // flashes the wrong ground. Mirrors src/lib/useTheme.ts.
+      (function () {
+        try {
+          var stored = localStorage.getItem('stacklens-theme');
+          var dark =
+            stored === 'dark' ||
+            (stored !== 'light' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {
+          /* storage unavailable: keep the dark default */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

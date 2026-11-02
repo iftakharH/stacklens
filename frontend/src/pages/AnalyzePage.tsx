@@ -11,34 +11,14 @@ import type { AnalyzeData } from '../types';
 import ErrorCard from '../components/ErrorCard';
 import ReportView from '../components/ReportView';
 import { useSignIn } from '../components/signin-context';
-import { Card, SkeletonPulse } from '../components/ui';
+import { EmptyField, SkeletonPulse } from '../components/ui';
+import extractUsername from '../lib/username';
 
 type AnalysisState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; error: ApiError }
   | { status: 'success'; data: AnalyzeData };
-
-const extractUsernameClient = (raw: string): string | null => {
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (!trimmed.includes('http') && !trimmed.includes('/')) return trimmed;
-  try {
-    const url = new URL(trimmed);
-    const parts = url.pathname.split('/').filter(Boolean);
-    return parts[0] || null;
-  } catch {
-    const parts = trimmed.split('/').filter(Boolean);
-    return parts.pop() || null;
-  }
-};
-
-const actionButtonClass =
-  'inline-flex h-11 items-center justify-center rounded-[6px] border border-line px-3 text-[13px] font-semibold text-ink transition-colors hover:border-signal disabled:cursor-not-allowed disabled:opacity-60';
-
-const primaryActionButtonClass =
-  'inline-flex h-11 items-center justify-center rounded-[6px] bg-signal px-4 text-[13px] font-semibold text-signal-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
 
 // Save-candidate + share-link actions shown on a fresh analyze result.
 // Enabled only for signed-in users when the report was persisted (report_id).
@@ -54,7 +34,7 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
   >('idle');
   const [saveError, setSaveError] = useState('');
   const [shareState, setShareState] = useState<
-    'idle' | 'creating' | 'copied' | 'error'
+    'idle' | 'creating' | 'copied' | 'created' | 'error'
   >('idle');
   const [shareError, setShareError] = useState('');
   const [shareUrl, setShareUrl] = useState('');
@@ -85,10 +65,10 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
         await navigator.clipboard.writeText(url);
         setShareState('copied');
       } catch {
-        // Clipboard unavailable (permissions / non-secure context) —
-        // fall back to showing the link for manual copy.
+        // Clipboard unavailable (permissions / non-secure context) — never
+        // claim it was copied; show the link for manual copy instead.
         setShareUrl(url);
-        setShareState('copied');
+        setShareState('created');
       }
     } catch (err) {
       setShareState('error');
@@ -99,28 +79,27 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
   };
 
   return (
-    <Card>
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center">
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Note for your shortlist (optional)"
-              aria-label="Candidate note"
-              maxLength={500}
-              disabled={!enabled || saveState === 'saving'}
-              className="h-11 min-w-0 flex-1 rounded-[6px] border border-line bg-panel px-3 text-[13px] text-ink placeholder:text-muted disabled:opacity-60"
-            />
-          </div>
+    <div className="border-y border-line py-3">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <span className="rail shrink-0 text-muted lg:w-[7.5rem]">Keep reading</span>
+        <input
+          type="text"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Note (optional)"
+          aria-label="Candidate note"
+          maxLength={500}
+          disabled={!enabled || saveState === 'saving'}
+          className="field-input h-10 flex-1 text-[13px]"
+        />
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={() => {
               void handleSave();
             }}
             disabled={!enabled || saveState === 'saving'}
-            className={actionButtonClass}
+            className="btn btn-sm h-10 flex-1 whitespace-nowrap lg:flex-none"
           >
             {saveState === 'saving' ? 'Saving…' : 'Save candidate'}
           </button>
@@ -130,176 +109,193 @@ const ResultActions: React.FC<{ data: AnalyzeData }> = ({ data }) => {
               void handleShare();
             }}
             disabled={!enabled || shareState === 'creating'}
-            className={primaryActionButtonClass}
+            className="btn btn-primary btn-sm h-10 flex-1 whitespace-nowrap lg:flex-none"
           >
             {shareState === 'creating' ? 'Creating…' : 'Create share link'}
           </button>
         </div>
-
-        {!enabled && !isPending && !signedIn && (
-          <p className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
-            <span>
-              Sign in to save candidates and create share links — analyzing
-              stays free without an account.
-            </span>
-            <button
-              type="button"
-              onClick={openSignIn}
-              className="rounded-[6px] border border-line px-2.5 py-1 text-[13px] font-semibold text-ink transition-colors hover:border-signal"
-            >
-              Sign in
-            </button>
-          </p>
-        )}
-        {!enabled && signedIn && (
-          <p className="text-[13px] text-muted">
-            Reports aren&apos;t being stored on this server, so saving and
-            sharing are unavailable.
-          </p>
-        )}
-
-        {saveState === 'saved' && (
-          <p className="text-[13px] text-signal" role="status">
-            Saved — see your shortlist on the Saved page.
-          </p>
-        )}
-        {saveState === 'error' && (
-          <p className="text-[13px] text-danger" role="alert">
-            {saveError}
-          </p>
-        )}
-
-        {shareState === 'copied' && (
-          <p className="text-[13px] text-signal" role="status">
-            Link copied{shareUrl ? '' : ' to your clipboard'} — anyone with it
-            can view this report.
-          </p>
-        )}
-        {shareUrl && (
-          <input
-            type="text"
-            readOnly
-            value={shareUrl}
-            aria-label="Share link"
-            onFocus={(e) => e.target.select()}
-            className="h-11 w-full rounded-[6px] border border-line bg-paper px-3 text-[13px] text-muted"
-          />
-        )}
-        {shareState === 'error' && (
-          <p className="text-[13px] text-danger" role="alert">
-            {shareError}
-          </p>
-        )}
       </div>
-    </Card>
+
+      {!enabled && !isPending && !signedIn && (
+        <p className="mt-2.5 flex flex-wrap items-center gap-2 text-[12px] text-muted">
+          <span>
+            Sign in to save candidates and create share links — analyzing stays
+            free without an account.
+          </span>
+          <button
+            type="button"
+            onClick={openSignIn}
+            className="rail border border-line-strong px-2 py-1 text-ink transition-colors hover:border-signal"
+          >
+            Sign in
+          </button>
+        </p>
+      )}
+      {!enabled && signedIn && (
+        <p className="mt-2.5 text-[12px] text-muted">
+          Reports aren&apos;t being stored on this server, so saving and sharing
+          are unavailable.
+        </p>
+      )}
+
+      {saveState === 'saved' && (
+        <p className="rail-sm mt-2.5 text-signal" role="status">
+          Saved — see your shortlist on the Saved page
+        </p>
+      )}
+      {saveState === 'error' && (
+        <p className="mt-2.5 text-[12px] text-danger" role="alert">
+          {saveError}
+        </p>
+      )}
+
+      {shareState === 'copied' && (
+        <p className="rail-sm mt-2.5 text-signal" role="status">
+          Link copied to your clipboard — anyone with it can view this report
+        </p>
+      )}
+      {shareState === 'created' && (
+        <p className="rail-sm mt-2.5 text-signal" role="status">
+          Share link created below — anyone with it can view this report
+        </p>
+      )}
+      {shareUrl && (
+        <input
+          type="text"
+          readOnly
+          value={shareUrl}
+          aria-label="Share link"
+          onFocus={(e) => e.target.select()}
+          className="field-input mt-2.5 h-10 text-[12px]"
+        />
+      )}
+      {shareState === 'error' && (
+        <p className="mt-2.5 text-[12px] text-danger" role="alert">
+          {shareError}
+        </p>
+      )}
+    </div>
   );
 };
 
 const AnalyzePage = () => {
-  const [searchParams] = useSearchParams();
-  const [input, setInput] = useState<string>(
-    () => searchParams.get('q') ?? ''
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentQ = searchParams.get('q') ?? '';
+  // The page REMOUNTS when the ?q= in the URL changes (key in App.tsx), so
+  // the URL is always the prefill source at mount; input state is only
+  // rewritten by the user from here on.
+  const [input, setInput] = useState<string>(() => currentQ);
   const [state, setState] = useState<AnalysisState>(() =>
-    searchParams.get('q') ? { status: 'loading' } : { status: 'idle' }
+    currentQ ? { status: 'loading' } : { status: 'idle' }
   );
-  const ranInitialQuery = useRef(false);
+  // Bumped per run so a finished reading can replay the acquisition sweep
+  // even when re-analyzing the same profile.
+  const [runSeq, setRunSeq] = useState(0);
+  // Guard against a stale response (slower older request) overwriting a
+  // newer result: every run checks its ticket before committing state.
+  const runSeqRef = useRef(0);
 
-  // Runs an analysis and lands in a terminal state (success / error).
-  // Every setState happens behind an await so this is safe to call from
-  // effects; callers set the 'loading' state themselves.
-  const runAnalysis = useCallback(async (raw: string) => {
-    const username = extractUsernameClient(raw);
+  // Runs an analysis: sets the loading state synchronously, then commits the
+  // terminal state behind an await — and only if its run is still the latest.
+  const runAnalysis = useCallback(
+    async (raw: string) => {
+      const ticket = ++runSeqRef.current;
+      setRunSeq(ticket);
+      setState({ status: 'loading' });
 
-    const outcome = await (username
-      ? analyzeProfile(raw).then(
-          (data) => ({ kind: 'success' as const, data }),
-          (err: unknown) => ({
+      const username = extractUsername(raw);
+
+      const outcome = await (username
+        ? analyzeProfile(raw).then(
+            (data) => ({ kind: 'success' as const, data }),
+            (err: unknown) => ({
+              kind: 'error' as const,
+              error:
+                err instanceof ApiError
+                  ? err
+                  : new ApiError({
+                      code: 'UNKNOWN',
+                      status: 0,
+                      retryable: true,
+                      message: 'Something went wrong while analyzing.',
+                    }),
+            }),
+          )
+        : Promise.resolve({
             kind: 'error' as const,
-            error:
-              err instanceof ApiError
-                ? err
-                : new ApiError({
-                    code: 'UNKNOWN',
-                    status: 0,
-                    retryable: true,
-                    message: 'Something went wrong while analyzing.',
-                  }),
-          })
-        )
-      : Promise.resolve({
-          kind: 'error' as const,
-          error: new ApiError({
-            code: 'VALIDATION',
-            status: 400,
-            retryable: false,
-            message: 'Please enter a valid GitHub URL or username.',
-          }),
-        }));
+            error: new ApiError({
+              code: 'VALIDATION',
+              status: 400,
+              retryable: false,
+              message: 'Please enter a valid GitHub URL or username.',
+            }),
+          }));
 
-    setState(
-      outcome.kind === 'success'
-        ? { status: 'success', data: outcome.data }
-        : { status: 'error', error: outcome.error }
-    );
-  }, []);
+      if (ticket !== runSeqRef.current) return;
 
-  // Auto-run once when arriving with /?q=<username> (e.g. from the Saved
-  // page "Analyze" link). The input is prefilled from the URL directly in
-  // the initial state above.
+      setState(
+        outcome.kind === 'success'
+          ? { status: 'success', data: outcome.data }
+          : { status: 'error', error: outcome.error }
+      );
+
+      // Successful reads keep the ?q= in the URL so refresh/back restores
+      // the reading. It mirrors what was actually analyzed, not the raw
+      // input (a GitHub profile URL round-trips to its username). Skipped
+      // when the URL already carries this q.
+      if (outcome.kind === 'success' && username && currentQ !== username) {
+        setSearchParams({ q: username }, { replace: true });
+      }
+    },
+    [currentQ, setSearchParams],
+  );
+
+  // Arriving with /?q=<username> runs the analysis automatically — once per
+  // mount. The page remounts on a changed q (see App.tsx), so repeated runs
+  // happen only when the user actually navigates there fresh.
+  const ranOnMount = useRef(false);
   useEffect(() => {
-    if (ranInitialQuery.current) return;
-    ranInitialQuery.current = true;
-    const q = searchParams.get('q') ?? '';
-    if (!q) return;
-
-    (async () => {
-      await runAnalysis(q);
-    })();
-  }, [searchParams, runAnalysis]);
+    if (ranOnMount.current || !currentQ) return;
+    ranOnMount.current = true;
+    void runAnalysis(currentQ);
+  }, [currentQ, runAnalysis]);
 
   const handleAnalyze = useCallback(
     async (e: React.SyntheticEvent<HTMLFormElement>) => {
       e.preventDefault();
-      setState({ status: 'loading' });
       await runAnalysis(input);
     },
     [input, runAnalysis]
   );
 
   return (
-    <main className="flex flex-1 flex-col gap-4 sm:gap-5">
-      {/* Search sits in a full-width bar so the candidate report below gets the
-          whole canvas — the profile is the product, not a sidebar. */}
-      <section className="rounded-[6px] border border-line bg-panel p-4 sm:p-5">
+    <main className="flex flex-1 flex-col">
+      {/* The control surface. Full-width, so the reading below gets the whole
+          card — the profile is the product, not a sidebar. */}
+      <section className="-mt-1 border-t border-line-strong pt-4">
         <form onSubmit={handleAnalyze}>
           <label
             htmlFor="github-profile-input"
-            className="block text-[13px] font-medium text-ink"
+            className="rail block text-muted"
           >
             GitHub profile URL or username
           </label>
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               id="github-profile-input"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="https://github.com/username"
-              className="h-11 min-w-0 flex-1 rounded-[6px] border border-line bg-paper px-3 text-[14px] text-ink placeholder:text-muted sm:max-w-[460px]"
+              className="field-input flex-1 sm:max-w-[32rem]"
             />
             <button
               type="submit"
-              className="inline-flex h-11 items-center justify-center rounded-[6px] bg-signal px-5 text-[14px] font-semibold text-signal-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn btn-primary shrink-0 px-5"
               disabled={state.status === 'loading'}
             >
               {state.status === 'loading' ? 'Analyzing…' : 'Analyze profile'}
             </button>
-            {state.status === 'loading' && (
-              <span className="flex items-center sm:pl-2">
-                <SkeletonPulse />
-              </span>
-            )}
           </div>
 
           {state.status === 'error' && (
@@ -314,17 +310,21 @@ const AnalyzePage = () => {
             </div>
           )}
           {state.status === 'idle' && (
-            <p className="mt-3 text-[13px] text-muted">
-              Public data only · no token required. Paste a profile to build the
-              report.
+            <p className="rail-sm mt-3 text-muted">
+              Public data only · no token required
+            </p>
+          )}
+          {state.status === 'success' && (
+            <p className="rail-sm mt-3 text-muted">
+              Reading complete · {state.data.username}
             </p>
           )}
         </form>
       </section>
 
-      <section className="min-w-0 space-y-3 sm:space-y-4">
+      <section className="mt-6 min-w-0 sm:mt-8">
         {state.status === 'success' ? (
-          <>
+          <div className="acquire space-y-4 sm:space-y-5" key={runSeq}>
             <ResultActions
               key={state.data.report_id ?? state.data.username}
               data={state.data}
@@ -333,20 +333,15 @@ const AnalyzePage = () => {
               username={state.data.username}
               report={state.data.report}
             />
-          </>
+          </div>
+        ) : state.status === 'loading' ? (
+          <SkeletonPulse label="Acquiring reading" />
         ) : (
-          <Card>
-            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center sm:py-12">
-              <p className="text-[13px] font-semibold text-ink">Developer report</p>
-              <h2 className="text-lg font-semibold text-ink sm:text-xl">
-                Your next candidate, in one glance.
-              </h2>
-              <p className="max-w-sm text-[13px] leading-relaxed text-muted">
-                Paste a GitHub profile to see a compact overview of stack, activity, and
-                signal — so you can move from resume to conversation faster.
-              </p>
-            </div>
-          </Card>
+          <EmptyField
+            kicker="No reading on the card"
+            heading="Your next candidate, in one glance."
+            body="Paste a GitHub profile to see a compact overview of stack, activity, and signal — so you can move from resume to conversation faster."
+          />
         )}
       </section>
     </main>

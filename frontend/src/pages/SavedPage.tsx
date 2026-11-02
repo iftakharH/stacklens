@@ -8,7 +8,7 @@ import {
 } from '../api/client';
 import type { Candidate } from '../types';
 import ErrorCard from '../components/ErrorCard';
-import { Card, SignInRequiredCard, SkeletonPulse } from '../components/ui';
+import { EmptyField, SignInRequiredCard, SkeletonPulse } from '../components/ui';
 
 const GATE_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'Sign in to save candidates.',
@@ -18,24 +18,18 @@ const GATE_MESSAGES: Record<string, string> = {
 const isGateError = (err: ApiError) =>
   err.code === 'UNAUTHORIZED' || err.code === 'CONFIG_MISSING';
 
-const analyzeLinkClass =
-  'inline-flex items-center gap-1.5 rounded-[6px] border border-line px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-signal';
-
-const deleteButtonClass =
-  'inline-flex items-center justify-center rounded-[6px] border border-line px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:border-danger hover:text-danger disabled:cursor-not-allowed disabled:opacity-60';
-
 const CandidateRow: React.FC<{
   candidate: Candidate;
   deleting: boolean;
   onDelete: (id: string) => void;
 }> = ({ candidate, deleting, onDelete }) => (
-  <div className="flex flex-col gap-2 rounded-[6px] border border-line bg-paper p-3 sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
     <div className="min-w-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="truncate text-[13px] font-semibold text-ink">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="num truncate text-[13px] font-semibold text-ink">
           @{candidate.github_username}
         </span>
-        <span className="font-mono text-[11px] text-muted">
+        <span className="rail-sm text-muted">
           {new Date(candidate.created_at).toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'short',
@@ -44,7 +38,7 @@ const CandidateRow: React.FC<{
         </span>
       </div>
       {candidate.note && (
-        <p className="mt-1 line-clamp-2 text-[13px] text-muted">
+        <p className="mt-1.5 line-clamp-2 max-w-[62ch] text-[13px] leading-[1.55] text-muted">
           {candidate.note}
         </p>
       )}
@@ -52,7 +46,7 @@ const CandidateRow: React.FC<{
     <div className="flex shrink-0 items-center gap-2">
       <Link
         to={`/analyze?q=${encodeURIComponent(candidate.github_username)}`}
-        className={analyzeLinkClass}
+        className="btn btn-sm"
       >
         Analyze
       </Link>
@@ -60,7 +54,7 @@ const CandidateRow: React.FC<{
         type="button"
         onClick={() => onDelete(candidate.id)}
         disabled={deleting}
-        className={deleteButtonClass}
+        className="btn btn-sm border-line text-muted hover:border-danger hover:text-danger"
         aria-label={`Remove ${candidate.github_username} from saved candidates`}
       >
         {deleting ? 'Removing…' : 'Remove'}
@@ -83,33 +77,38 @@ const SavedPage = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  // Refetch used by the delete flow (event handler context). Lands in a
-  // terminal state (ready / gate / error); every setState happens behind an
-  // await.
+  // Shared failure classifier: gate errors (sign-in / server-configuration)
+  // land in their own UI states; anything else is a retryable error card.
+  const classify = useCallback((err: unknown) => {
+    const error =
+      err instanceof ApiError
+        ? err
+        : new ApiError({
+            code: 'UNKNOWN',
+            status: 0,
+            retryable: true,
+            message: 'Could not load your saved candidates.',
+          });
+    if (isGateError(error)) {
+      setState({
+        status: 'gate',
+        message: GATE_MESSAGES[error.code] ?? GATE_MESSAGES.UNAUTHORIZED,
+      });
+    } else {
+      setState({ status: 'error', error });
+    }
+  }, []);
+
+  // Fetch + commit (event-handler context). Every setState happens behind an
+  // await so both the effect below and handleDelete can call it.
   const load = useCallback(async () => {
     try {
       const data = await listCandidates();
       setState({ status: 'ready', items: data.items });
     } catch (err) {
-      const error =
-        err instanceof ApiError
-          ? err
-          : new ApiError({
-              code: 'UNKNOWN',
-              status: 0,
-              retryable: true,
-              message: 'Could not load your saved candidates.',
-            });
-      if (isGateError(error)) {
-        setState({
-          status: 'gate',
-          message: GATE_MESSAGES[error.code] ?? 'Sign in to save candidates.',
-        });
-      } else {
-        setState({ status: 'error', error });
-      }
+      classify(err);
     }
-  }, []);
+  }, [classify]);
 
   // Initial load (and reloads triggered by the retry button via reloadToken)
   // for signed-in users, with unmount/sign-out cancellation.
@@ -123,30 +122,14 @@ const SavedPage = () => {
         if (!cancelled) setState({ status: 'ready', items: data.items });
       } catch (err) {
         if (cancelled) return;
-        const error =
-          err instanceof ApiError
-            ? err
-            : new ApiError({
-                code: 'UNKNOWN',
-                status: 0,
-                retryable: true,
-                message: 'Could not load your saved candidates.',
-              });
-        if (isGateError(error)) {
-          setState({
-            status: 'gate',
-            message: GATE_MESSAGES[error.code] ?? 'Sign in to save candidates.',
-          });
-        } else {
-          setState({ status: 'error', error });
-        }
+        classify(err);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [sessionPending, signedIn, reloadToken]);
+  }, [sessionPending, signedIn, reloadToken, classify]);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -174,15 +157,15 @@ const SavedPage = () => {
   // then show the data-loading skeleton for signed-in users.
   if (sessionPending) {
     return (
-      <main className="flex flex-1 flex-col gap-4">
-        <SkeletonPulse label="Loading your shortlist…" />
+      <main className="flex flex-1 flex-col">
+        <SkeletonPulse label="Loading your shortlist" />
       </main>
     );
   }
 
   if (!signedIn) {
     return (
-      <main className="flex flex-1 flex-col gap-4">
+      <main className="flex flex-1 flex-col">
         <SignInRequiredCard message={GATE_MESSAGES.UNAUTHORIZED} />
       </main>
     );
@@ -190,23 +173,28 @@ const SavedPage = () => {
 
   if (state.status === 'loading') {
     return (
-      <main className="flex flex-1 flex-col gap-4">
-        <SkeletonPulse label="Loading your shortlist…" />
+      <main className="flex flex-1 flex-col">
+        <SkeletonPulse label="Loading your shortlist" />
       </main>
     );
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4">
-      <div className="space-y-1.5">
-        <p className="text-[13px] font-semibold text-ink">Shortlist</p>
-        <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
-          Saved candidates
-        </h2>
-        <p className="text-[13px] text-muted">
+    <main className="flex flex-1 flex-col gap-6">
+      <header className="border-t border-line-strong pt-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h2 className="display-tight text-[clamp(1.3rem,2.6vw,1.9rem)] text-ink">
+            Saved candidates
+          </h2>
+          <span className="rail-sm text-muted">
+            {state.status === 'ready' ? `${state.items.length} on the card` : '—'}
+          </span>
+        </div>
+        <p className="mt-2 max-w-[62ch] text-[13px] leading-relaxed text-muted">
           Developers you bookmarked while analyzing GitHub profiles.
         </p>
-      </div>
+        <div aria-hidden="true" className="ticks-x-subtle mt-3" />
+      </header>
 
       {state.status === 'error' && (
         <ErrorCard
@@ -219,38 +207,31 @@ const SavedPage = () => {
       )}
 
       {state.status === 'ready' && state.items.length === 0 && (
-        <Card>
-          <div className="flex flex-col items-center justify-center gap-3 py-10 text-center sm:py-12">
-            <p className="text-[13px] font-semibold text-ink">Empty shortlist</p>
-            <h2 className="text-lg font-semibold text-ink sm:text-xl">
-              No saved candidates yet.
-            </h2>
-            <p className="max-w-sm text-[13px] leading-relaxed text-muted">
-              Analyze a GitHub profile and hit “Save candidate” to keep it here
-              with a note.
-            </p>
-            <Link to="/analyze" className={analyzeLinkClass}>
+        <EmptyField
+          kicker="Shortlist · empty"
+          heading="No saved candidates yet."
+          body="Analyze a GitHub profile and hit “Save candidate” to keep it here with a note."
+          action={
+            <Link to="/analyze" className="btn btn-sm">
               Analyze a profile
             </Link>
-          </div>
-        </Card>
+          }
+        />
       )}
 
       {state.status === 'ready' && state.items.length > 0 && (
-        <Card>
-          <div className="space-y-2 sm:space-y-2.5">
-            {state.items.map((candidate) => (
-              <CandidateRow
-                key={candidate.id}
-                candidate={candidate}
-                deleting={deletingId === candidate.id}
-                onDelete={(id) => {
-                  void handleDelete(id);
-                }}
-              />
-            ))}
-          </div>
-        </Card>
+        <div className="ledger border-t border-line-strong">
+          {state.items.map((candidate) => (
+            <CandidateRow
+              key={candidate.id}
+              candidate={candidate}
+              deleting={deletingId === candidate.id}
+              onDelete={(id) => {
+                void handleDelete(id);
+              }}
+            />
+          ))}
+        </div>
       )}
     </main>
   );

@@ -1,11 +1,11 @@
 import { authClient } from '../api/auth';
 import { useSignIn } from './signin-context';
 
-const secondaryButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-[6px] border border-line px-3 text-[13px] font-semibold text-ink transition-colors hover:border-signal disabled:opacity-60';
-
-// App-shell auth affordance: opens the sign-in dialog in place (any page can
-// also open it via useSignIn), or shows the signed-in identity + sign-out.
+/**
+ * App-shell auth affordance: opens the sign-in panel in place, or shows the
+ * signed-in identity with an exit. The avatar is set square on the field, the
+ * way every other reading on the page is set.
+ */
 function AuthControls() {
   const { data: session, isPending } = authClient.useSession();
   const { openSignIn } = useSignIn();
@@ -20,14 +20,14 @@ function AuthControls() {
           <img
             src={user.image}
             alt=""
-            className="h-8 w-8 rounded-full border border-line object-cover"
+            className="h-8 w-8 border border-line-strong object-cover"
           />
         ) : (
-          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-panel font-mono text-[12px] text-ink">
+          <span className="num flex h-8 w-8 items-center justify-center border border-line-strong text-[12px] text-ink">
             {(user.name || user.email || '?').charAt(0).toUpperCase()}
           </span>
         )}
-        <span className="hidden max-w-[140px] truncate text-[13px] font-medium text-ink sm:inline">
+        <span className="hidden max-w-[150px] truncate text-[12px] text-ink2 sm:inline">
           {user.name || user.email}
         </span>
         <button
@@ -35,7 +35,7 @@ function AuthControls() {
           onClick={() => {
             void authClient.signOut();
           }}
-          className={secondaryButtonClass}
+          className="btn btn-sm"
         >
           Sign out
         </button>
@@ -44,7 +44,7 @@ function AuthControls() {
   }
 
   return (
-    <button type="button" onClick={openSignIn} className={secondaryButtonClass}>
+    <button type="button" onClick={openSignIn} className="btn btn-sm">
       Sign in
     </button>
   );

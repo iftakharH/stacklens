@@ -5,36 +5,46 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Legacy `primary` scale now points at the landing-page signal token
-        // (see src/index.css). Safety net only: a missed legacy class resolves
-        // to the theme-aware teal instead of the retired violet gradient.
+        // Signal Calibration tokens. Every value flips with the `.dark` class
+        // through CSS variables (see src/index.css), so do NOT use Tailwind
+        // opacity modifiers on them (e.g. bg-field/70) — the vars are plain
+        // `var()` strings that cannot be split into channels.
+        field: 'var(--field)',
+        'field-deep': 'var(--field-deep)',
+        plate: 'var(--plate)',
+        'plate-raised': 'var(--plate-raised)',
+        ink: 'var(--ink)',
+        ink2: 'var(--ink-2)',
+        muted: 'var(--muted)',
+        line: 'var(--line)',
+        'line-strong': 'var(--line-strong)',
+        signal: 'var(--signal)',
+        'signal-soft': 'var(--signal-soft)',
+        'signal-ink': 'var(--signal-ink)',
+        danger: 'var(--danger)',
+        'danger-soft': 'var(--danger-soft)',
+        'danger-ink': 'var(--danger-ink)',
+
+        // Legacy aliases kept so an unreached class still resolves to the
+        // current palette instead of the retired violet scale.
+        paper: 'var(--field)',
+        panel: 'var(--plate)',
         primary: {
           DEFAULT: 'var(--signal)',
           soft: 'var(--signal)',
-          subtle: 'var(--paper)',
+          subtle: 'var(--field)',
           dark: 'var(--signal)',
         },
         surface: {
-          DEFAULT: 'var(--panel)',
-          alt: 'var(--paper)',
-          light: 'var(--panel)',
+          DEFAULT: 'var(--plate)',
+          alt: 'var(--field)',
+          light: 'var(--plate)',
         },
-        // Landing-page tokens. Values flip with the `.dark` class via CSS vars
-        // (see src/index.css). They are plain `var()` strings, so do not use
-        // Tailwind opacity modifiers (e.g. bg-paper/70) on them.
-        paper: 'var(--paper)',
-        panel: 'var(--panel)',
-        ink: 'var(--ink)',
-        muted: 'var(--muted)',
-        line: 'var(--line)',
-        signal: 'var(--signal)',
-        'signal-ink': 'var(--signal-ink)',
-        danger: 'var(--danger)',
       },
       fontFamily: {
-        // One grotesque in two widths (display uses font-stretch via .display),
-        // plus a readout mono reserved for measured values. Both self-hosted
-        // via @fontsource-variable (see src/main.tsx).
+        // One grotesque in two widths (display uses font-stretch), plus a
+        // readout mono reserved for measured values. Both self-hosted via
+        // @fontsource-variable (see src/main.tsx).
         sans: ['"Archivo Variable"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: [
           '"Martian Mono Variable"',
@@ -43,12 +53,24 @@ export default {
           'monospace',
         ],
       },
+      fontSize: {
+        '2xs': ['0.6875rem', { lineHeight: '1.45' }],
+      },
+      letterSpacing: {
+        rail: '0.16em',
+        plate: '0.07em',
+      },
+      maxWidth: {
+        measure: '68ch',
+      },
       boxShadow: {
-        soft: '0 18px 45px rgba(15, 23, 42, 0.25)',
+        soft: 'var(--plate-shadow)',
       },
       borderRadius: {
-        xl: '1rem',
-        '2xl': '1.5rem',
+        // This world is set square. The scale exists so an accidental
+        // `rounded-xl` resolves to a hairline rather than a pill.
+        xl: '0',
+        '2xl': '0',
       },
     },
   },

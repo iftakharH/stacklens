@@ -3,6 +3,24 @@ import { authClient } from '../api/auth';
 import { useTheme } from '../lib/useTheme';
 import AuthControls from './AuthControls';
 import SignInProvider from './SignInProvider';
+import { Registration } from './ui';
+
+/** The mark is a registration target, not a logo tile. */
+const LensMark: React.FC = () => (
+  <svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    className="h-5 w-5 shrink-0 text-signal sm:h-[22px] sm:w-[22px]"
+  >
+    <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="3" fill="currentColor" />
+    <path
+      d="M12 0.5v4M12 19.5v4M0.5 12h4M19.5 12h4"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+  </svg>
+);
 
 const ThemeToggle: React.FC<{ dark: boolean; onToggle: () => void }> = ({
   dark,
@@ -12,7 +30,7 @@ const ThemeToggle: React.FC<{ dark: boolean; onToggle: () => void }> = ({
     type="button"
     onClick={onToggle}
     aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-    className="flex h-9 w-9 items-center justify-center rounded-[6px] border border-line text-muted transition-colors hover:border-signal hover:text-ink"
+    className="flex h-9 w-9 shrink-0 items-center justify-center border border-line-strong text-muted transition-colors hover:border-signal hover:text-ink"
   >
     {dark ? (
       <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4 fill-current">
@@ -27,14 +45,17 @@ const ThemeToggle: React.FC<{ dark: boolean; onToggle: () => void }> = ({
 );
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded-[6px] border px-3 py-1.5 text-[13px] font-medium transition-colors ${
+  `relative flex h-9 items-center px-2.5 rail transition-colors ${
     isActive
-      ? 'border-line bg-panel text-ink'
-      : 'border-transparent text-muted hover:border-line hover:text-ink'
+      ? 'text-ink after:absolute after:inset-x-2 after:bottom-0 after:h-[2px] after:bg-signal'
+      : 'text-muted hover:text-ink'
   }`;
 
-// App shell: paper background, header (logo / nav / auth / theme), and the
-// routed page below. Nav items only appear for signed-in users.
+/**
+ * App shell: the page is one calibration card. A single frame carries the
+ * wordmark, the navigation, the routed surface, and the edge-code rail that
+ * stamps what this card is reading.
+ */
 const Layout = () => {
   const { dark, toggle } = useTheme();
 
@@ -43,44 +64,66 @@ const Layout = () => {
 
   return (
     <SignInProvider>
-      <div className="min-h-screen bg-paper text-ink">
-        <div className="mx-auto flex min-h-screen max-w-[1320px] flex-col px-3 pb-6 pt-4 sm:px-5 sm:pb-8 sm:pt-6 md:px-6 lg:px-8 lg:pb-10 xl:px-10">
-        <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4 sm:mb-6 sm:pb-5 md:mb-8">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3" aria-label="StackLens home">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] bg-ink text-paper sm:h-10 sm:w-10">
-                <span className="text-base font-black sm:text-lg">SL</span>
-              </div>
-              <div className="min-w-0">
-                <h1 className="truncate text-base font-semibold tracking-tight text-ink sm:text-lg md:text-xl">
-                  StackLens
-                </h1>
-                <p className="truncate text-[12px] text-muted sm:text-[13px]">
+      <div className="ground min-h-screen">
+        <div className="mx-auto w-full max-w-[1400px] px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-7">
+          <div className="frame flex min-h-[calc(100vh-1.5rem)] flex-col px-4 py-4 sm:px-6 sm:py-5 lg:px-9 lg:py-7">
+            <Registration />
+
+            <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4 sm:pb-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <Link
+                  to="/"
+                  className="flex min-w-0 items-center gap-2.5"
+                  aria-label="StackLens home"
+                >
+                  <LensMark />
+                  <h1 className="display-tight truncate text-[0.9375rem] text-ink sm:text-base">
+                    StackLens
+                  </h1>
+                </Link>
+                <span
+                  aria-hidden="true"
+                  className="hidden h-4 w-px shrink-0 bg-line-strong sm:block"
+                />
+                <p className="hidden min-w-0 truncate text-[12px] text-muted md:block">
                   See the developer behind the repositories.
                 </p>
               </div>
-            </Link>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {signedIn && (
-              <nav className="flex items-center gap-1" aria-label="Main navigation">
-                <NavLink to="/analyze" className={navLinkClass}>
-                  Analyze
-                </NavLink>
-                <NavLink to="/saved" className={navLinkClass}>
-                  Saved
-                </NavLink>
-                <NavLink to="/history" className={navLinkClass}>
-                  History
-                </NavLink>
-              </nav>
-            )}
-            <AuthControls />
-            <ThemeToggle dark={dark} onToggle={toggle} />
-          </div>
-        </header>
 
-        <Outlet />
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3.5">
+                {signedIn && (
+                  <nav className="-ml-2.5 flex items-center" aria-label="Main navigation">
+                    <NavLink to="/analyze" className={navLinkClass}>
+                      Analyze
+                    </NavLink>
+                    <NavLink to="/saved" className={navLinkClass}>
+                      Saved
+                    </NavLink>
+                    <NavLink to="/history" className={navLinkClass}>
+                      History
+                    </NavLink>
+                  </nav>
+                )}
+                <AuthControls />
+                <ThemeToggle dark={dark} onToggle={toggle} />
+              </div>
+            </header>
+
+            <div aria-hidden="true" className="ticks-x" />
+
+            <main className="flex-1 pt-5 sm:pt-6">
+              <Outlet />
+            </main>
+
+            <footer className="mt-10 border-t border-line pt-4 sm:mt-12">
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+                <p className="rail-sm text-muted">
+                  Public GitHub data · read the same way every time
+                </p>
+                <p className="rail-sm text-muted">Not affiliated with GitHub</p>
+              </div>
+            </footer>
+          </div>
         </div>
       </div>
     </SignInProvider>

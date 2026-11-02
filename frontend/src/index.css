@@ -2,46 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ---------------------------------------------------------------------------
-   Landing-page tokens. The canvas is a cool grey (never warm cream); dark mode
-   uses GitHub's own canvas (#0D1117) because the subject is GitHub data. The
-   only saturated colour on the page is language data itself — everything the
-   interface owns is neutral, with a single deep-teal signal accent.
+/* ===========================================================================
+   StackLens — "Signal Calibration"
+
+   The page is one printed calibration card, not a stack of panels. Structure
+   comes from a woven graticule, a single outer frame, tick scales as the only
+   separators, and numbers set on calibrated scales. Futurism is signal
+   integrity, not glow: no gradient text, no glass, no halo shadows.
+
+   Colour strategy: drenched field + one datum accent. GitHub Linguist colours
+   are the only other saturation on the page, because language data *is* the
+   product's colour. Every reading that uses colour also prints its name and
+   number, so nothing is ever colour-only.
 --------------------------------------------------------------------------- */
+
 :root {
-  --paper: #eaedef;
-  --panel: #ffffff;
-  --ink: #12161c;
-  --muted: #59616d;
-  --line: #cfd5db;
-  --signal: #0e6e68;
-  --signal-ink: #ffffff;
-  /* Functional state colour, used for error text only — never decoration. */
-  --danger: #b01e28;
+  /* Light: the same card under room light. Cold paper, never cream. */
+  --field: #e7eaef;
+  --field-deep: #dce1e9;
+  --plate: #f2f5f9;
+  --plate-raised: #fbfcfe;
+  --ink: #0b0e15;
+  --ink-2: #2a3244;
+  --muted: #4b5468;
+  --line: #c2c9d5;
+  --line-strong: #97a1b2;
+  /* Reference-level datum: deep olive on paper so it stays legible. */
+  --signal: #4c6008;
+  --signal-soft: #e3ecc0;
+  --signal-ink: #f7f9f2;
+  --danger: #9d1220;
+  --danger-soft: #f6dfe1;
+  --danger-ink: #ffffff;
+  --grid-minor: color-mix(in srgb, var(--line) 62%, transparent);
+  --grid-major: color-mix(in srgb, var(--line-strong) 54%, transparent);
+  --vignette: color-mix(in srgb, var(--plate-raised) 90%, transparent);
+  --plate-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent),
+    0 18px 40px -26px color-mix(in srgb, var(--ink) 55%, transparent);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--signal) 28%, transparent);
 }
 
 .dark {
-  --paper: #0d1117;
-  --panel: #151b23;
-  --ink: #e8ecf1;
-  --muted: #8b96a5;
-  --line: #29313b;
-  --signal: #4cc9b0;
-  --signal-ink: #0d1117;
-  --danger: #ff8a8a;
+  /* Dark: the instrument at night. A cold blue-violet field, biased away from
+     neutral black on purpose so the accent never sits on a void. */
+  --field: #0b0e17;
+  --field-deep: #070911;
+  --plate: #121726;
+  --plate-raised: #18202f;
+  --ink: #edf1f8;
+  --ink-2: #c2cad9;
+  --muted: #8d97ab;
+  --line: #232c3f;
+  --line-strong: #3a465f;
+  --signal: #d7f24b;
+  --signal-soft: #2a3410;
+  --signal-ink: #0b0e17;
+  --danger: #ff9a9a;
+  --danger-soft: #2b1419;
+  --danger-ink: #0b0e17;
+  --grid-minor: color-mix(in srgb, var(--line) 78%, transparent);
+  --grid-major: color-mix(in srgb, var(--line-strong) 70%, transparent);
+  --vignette: color-mix(in srgb, var(--plate-raised) 55%, transparent);
+  --plate-shadow: 0 1px 0 color-mix(in srgb, #ffffff 4%, transparent),
+    0 20px 44px -24px #000000;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--signal) 22%, transparent);
 }
 
-/* Theme is controlled by class on <html> (see useTheme.ts). */
 html {
-  color-scheme: light dark;
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+html.dark {
+  /* Native browser surfaces (scrollbars, form controls) must follow the
+     card's ground, not the OS default. */
+  color-scheme: dark;
 }
 
 body {
-  @apply antialiased;
   margin: 0;
   min-height: 100vh;
+  background-color: var(--field);
+  color: var(--ink);
   font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
 }
 
 #root {
@@ -49,63 +99,509 @@ body {
   width: 100%;
 }
 
-/* Display type: the same family pushed to a wide, heavy plate-like setting.
-   Used for the landing page headline and section titles only. */
-.display {
-  font-stretch: 118%;
-  font-weight: 800;
-  letter-spacing: -0.021em;
-  line-height: 1.03;
+/* --- Browser surfaces: they carry the design too -------------------------- */
+
+::selection {
+  background-color: var(--signal);
+  color: var(--signal-ink);
 }
 
-/* Keyboard focus is visible everywhere, in the signal colour. */
+input,
+textarea {
+  caret-color: var(--signal);
+}
+
+* {
+  scrollbar-color: var(--line-strong) var(--field);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--field);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--line-strong);
+  border: 3px solid var(--field);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--signal);
+}
+
 :focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
-  border-radius: 3px;
+  border-radius: 0;
+  box-shadow: var(--focus-ring);
 }
 
-/* Token-based surfaces. `color-mix` is used where a value needs alpha, since
-   the theme tokens are plain `var()` strings that Tailwind opacity modifiers
-   cannot split into channels. */
-.surface-error {
-  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
-  background-color: color-mix(in srgb, var(--danger) 6%, var(--panel));
+/* --- Type voices ---------------------------------------------------------
+   One grotesque at a wide setting for plate lettering; Martian Mono is
+   reserved for measurement — numbers, scales, captions, the edge rail.
+-------------------------------------------------------------------------- */
+
+.display {
+  font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 118%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.028em;
+  line-height: 0.94;
+  text-wrap: balance;
 }
 
-.surface-muted {
-  background-color: color-mix(in srgb, var(--ink) 5%, var(--panel));
+.display-tight {
+  font-stretch: 112%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.018em;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
-.glass-surface {
-  background-color: color-mix(in srgb, var(--panel) 88%, transparent);
+/* Stamped edge-code / field labelling. */
+.rail {
+  font-family: 'Martian Mono Variable', ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-sm {
+  font-family: 'Martian Mono Variable', ui-monospace, SFMono-Regular, monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Measured values. Always tabular so columns line up across rows. */
+.num {
+  font-family: 'Martian Mono Variable', ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+/* --- Ground: a woven graticule over a drenched field --------------------- */
+
+.ground {
+  background-color: var(--field);
+  background-image:
+    radial-gradient(
+      120% 80% at 50% -10%,
+      var(--vignette) 0%,
+      transparent 62%
+    ),
+    repeating-linear-gradient(90deg, var(--grid-major) 0 1px, transparent 1px 224px),
+    repeating-linear-gradient(0deg, var(--grid-major) 0 1px, transparent 1px 224px),
+    repeating-linear-gradient(90deg, var(--grid-minor) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(0deg, var(--grid-minor) 0 1px, transparent 1px 56px);
+}
+
+/* The card frame. One frame owns the whole page; nothing inside it is boxed. */
+.frame {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  background-color: color-mix(in srgb, var(--field) 92%, transparent);
+}
+
+/* --- Tick scales: the only separators this world allows ------------------ */
+
+.ticks-x {
+  height: 7px;
+  background-image:
+    repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 7px);
+  background-size: 100% 7px, 100% 4px;
+  background-position: 0 0, 0 0;
+  background-repeat: repeat-x, repeat-x;
+}
+
+.ticks-x-subtle {
+  height: 5px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--line) 0 1px,
+    transparent 1px 8px
+  );
+  background-size: 100% 4px;
+  background-repeat: repeat-x;
+}
+
+/* Side scales: the card's printed margin, only where there is room for it. */
+.ticks-y {
+  width: 7px;
+  background-image:
+    repeating-linear-gradient(0deg, var(--line-strong) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 7px);
+  background-size: 7px 100%, 4px 100%;
+  background-repeat: repeat-y, repeat-y;
+}
+
+/* A hairline that is also a scale, with its label set in the margin. */
+.tick-rule {  position: relative;
+  border-top: 1px solid var(--line);
+}
+
+.tick-rule::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 5px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--line) 0 1px,
+    transparent 1px 8px
+  );
+  background-size: 100% 4px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+
+.reg-mark {
+  color: var(--line-strong);
+}
+
+/* Dialog scrim: the field, deepened, not a black wash. */
+.scrim {
+  background-color: color-mix(in srgb, var(--field-deep) 90%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+/* --- Plates and controls ------------------------------------------------- */
+
+.plate {
+  background-color: var(--plate);
   border: 1px solid var(--line);
-  backdrop-filter: blur(16px);
+  box-shadow: var(--plate-shadow);
+}
+
+.field-input {
+  height: 3rem;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line-strong);
+  background-color: var(--field-deep);
+  padding: 0 0.9rem;
+  color: var(--ink);
+  font-family: 'Martian Mono Variable', ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  border-radius: 0;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.field-input::placeholder {
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.field-input:hover {
+  border-color: color-mix(in srgb, var(--line-strong) 60%, var(--signal));
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--signal);
+  box-shadow: var(--focus-ring);
+  background-color: var(--field);
+}
+
+.field-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  padding: 0 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--ink);
+  font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--ink);
+  background-color: var(--plate);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--ink);
+  border-color: var(--ink);
+  color: var(--field);
+}
+
+.btn-primary:disabled {
+  background-color: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+  opacity: 1;
+}
+
+.btn-sm {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+
+/* --- Spectrum: patches carry the reading, labels carry the number -------- */
+
+.patch-strip {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--line);
+}
+
+/* Calibrated strip: graduations every 10% laid over the ink, so the spectrum
+   reads as a measured band rather than a progress bar. */
+.patch-strip--scaled {
+  position: relative;
+}
+
+.patch-strip--scaled::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--field) 70%, transparent) 0 1px,
+    transparent 1px 100%
+  );
+  background-size: 10% 100%;
+  background-repeat: repeat-x;
+  opacity: 0.55;
+}
+
+.patch {
+  position: relative;
+  height: 100%;
+  flex-shrink: 0;
+  transition: filter 180ms ease;
+}
+
+.patch::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 1px;
+  background-color: color-mix(in srgb, var(--field) 85%, transparent);
+}
+
+.patch:last-child::after {
+  content: none;
+}
+
+/* --- Calibrated scale ---------------------------------------------------
+   A rule with graduations, band boundaries, and a damped needle. The value
+   is read as a position between printed boundaries, never as a bare number.
+-------------------------------------------------------------------------- */
+
+.scale {
+  position: relative;
+  height: 2.25rem;
+}
+
+.scale-track {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0.625rem;
+  height: 1px;
+  background-color: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+.scale-graduation {
+  position: absolute;
+  bottom: 0.625rem;
+  width: 1px;
+  background-color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.scale-band {
+  position: absolute;
+  bottom: 0.375rem;
+  width: 1px;
+  background-color: color-mix(in srgb, var(--ink) 65%, transparent);
+}
+
+.needle {
+  position: absolute;
+  bottom: 0.625rem;
+  left: 0;
+  width: 2px;
+  height: 1.375rem;
+  background-color: var(--signal);
+  transform: translateX(-1px);
+  animation: needle-acquire 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.needle-head {
+  position: absolute;
+  top: -5px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--signal);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+/* --- Acquisition: one authored moment, at page load and per analysis ----- */
+
+.acquire {
+  position: relative;
+  overflow: hidden;
+}
+
+.acquire::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 34%;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--signal) 7%, transparent) 74%,
+    color-mix(in srgb, var(--signal) 22%, transparent) 98%,
+    transparent 100%
+  );
+  animation: acquire-sweep 1100ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+
+@keyframes acquire-sweep {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(320%);
+    opacity: 0;
+  }
+}
+
+@keyframes needle-acquire {
+  from {
+    left: 0;
+  }
+}
+
+.grow-x {
+  transform-origin: left center;
+  animation: grow-x 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.rise {
+  animation: rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
 
 .fade-in {
-  animation: fadeIn 0.35s ease-out forwards;
+  animation: fade-in 320ms ease-out both;
 }
 
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
-/* Respect reduced-motion preferences: render final state immediately and skip
-   smooth scrolling. */
+/* --- Report ledgers: hairline rows, no boxes ----------------------------- */
+
+.ledger > * + * {
+  border-top: 1px solid var(--line);
+}
+
+/* --- Functional surfaces ------------------------------------------------- */
+
+.surface-error {
+  border-color: color-mix(in srgb, var(--danger) 46%, var(--line));
+  background-color: color-mix(in srgb, var(--danger) 7%, var(--field));
+}
+
+/* --- Motion preferences -------------------------------------------------- */
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
+  .acquire::after,
+  .needle,
+  .grow-x,
+  .rise,
   .fade-in {
-    animation: none;
+    animation: none !important;
+  }
+
+  /* The skeleton's Tailwind animate-pulse must sit still too, and stay
+     visibly "working" rather than vanish. */
+  .animate-pulse {
+    animation: none !important;
+    opacity: 0.55;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }

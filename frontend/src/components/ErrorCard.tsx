@@ -27,6 +27,10 @@ type ErrorCardProps = {
   hint?: string;
 };
 
+/**
+ * A failed reading. Set as a flagged plate: the error code is stamped in mono,
+ * the problem and the recovery are named in the product's own words.
+ */
 const ErrorCard: React.FC<ErrorCardProps> = ({ error, onRetry, title, hint }) => {
   const rateLimited = error.code === 'RATE_LIMITED';
   const [seconds, setSeconds] = useState(() => countdownFor(error));
@@ -58,15 +62,21 @@ const ErrorCard: React.FC<ErrorCardProps> = ({ error, onRetry, title, hint }) =>
     : (hint ?? copy.hint ?? error.message);
 
   return (
-    <div role="alert" className="surface-error rounded-[6px] border px-3.5 py-3">
-      <p className="text-[13px] font-semibold text-danger">{heading}</p>
-      <p className="mt-0.5 text-[13px] text-danger">{description}</p>
+    <div
+      role="alert"
+      className="surface-error flex flex-col gap-2 border px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+    >
+      <div className="min-w-0">
+        <p className="rail text-danger">Reading failed · {error.code}</p>
+        <p className="mt-2 text-[13px] font-semibold text-ink">{heading}</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-ink2">{description}</p>
+      </div>
       {showRetry && (
         <button
           type="button"
           onClick={onRetry}
           disabled={retryDisabled}
-          className="mt-2 inline-flex items-center rounded-[6px] border border-line bg-panel px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:border-signal disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn btn-sm shrink-0 self-start"
         >
           {retryDisabled ? `Try again in ${seconds}s` : 'Try again'}
         </button>

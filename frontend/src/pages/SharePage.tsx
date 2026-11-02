@@ -44,15 +44,15 @@ const SharePage = () => {
 
   if (!token || state.status === 'loading') {
     return (
-      <main className="flex flex-1 flex-col gap-4">
-        <SkeletonPulse label="Opening shared report…" />
+      <main className="flex flex-1 flex-col">
+        <SkeletonPulse label="Opening shared report" />
       </main>
     );
   }
 
   if (state.status === 'error') {
     return (
-      <main className="flex flex-1 flex-col gap-4">
+      <main className="flex flex-1 flex-col">
         <ErrorCard
           error={state.error}
           title={state.error.code === 'NOT_FOUND' ? 'Share link unavailable' : undefined}
@@ -67,26 +67,24 @@ const SharePage = () => {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4">
-      <div className="space-y-1.5">
-        <p className="text-[13px] font-semibold text-ink">Shared report</p>
-        <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
-          A developer snapshot, shared with you.
-        </h2>
-      </div>
+    <main className="flex flex-1 flex-col gap-6">
+      <header className="border-t border-line-strong pt-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h2 className="display-tight text-[clamp(1.3rem,2.6vw,1.9rem)] text-ink">
+            A developer snapshot, shared with you.
+          </h2>
+          <span className="rail-sm shrink-0 text-muted">Shared report</span>
+        </div>
+        <div aria-hidden="true" className="ticks-x-subtle mt-3" />
+      </header>
 
-      <div className="space-y-3 sm:space-y-4">
-        <ReportView
-          username={state.data.username}
-          report={state.data.report}
-        />
-      </div>
+      <ReportView username={state.data.username} report={state.data.report} />
 
-      <p className="pt-2 text-center text-[12px] text-muted">
+      <p className="rail-sm border-t border-line pt-4 text-center text-muted">
         Generated with{' '}
         <a
           href="/"
-          className="font-medium text-signal hover:underline"
+          className="text-ink underline decoration-signal underline-offset-4 transition-colors hover:decoration-ink"
         >
           StackLens
         </a>

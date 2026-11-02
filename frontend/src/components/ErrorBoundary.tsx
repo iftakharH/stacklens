@@ -38,26 +38,29 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-paper px-5 text-center text-ink">
-        <p className="text-[15px] font-semibold text-ink">
-          Something broke while rendering this page.
-        </p>
-        <p className="max-w-[52ch] text-[13px] leading-relaxed text-muted">
-          Reload to try again. If it keeps happening, the problem is on our side
-          — nothing you did caused it.
-        </p>
-        {this.state.message && (
-          <p className="max-w-[72ch] break-words font-mono text-[11px] text-muted">
-            {this.state.message}
+      <div className="ground flex min-h-screen items-center justify-center px-5">
+        <div className="frame relative w-full max-w-[560px] p-6 sm:p-8">
+          <p className="rail text-danger">Card fault · render</p>
+          <p className="display-tight mt-3 text-[1.1rem] text-ink">
+            Something broke while rendering this page.
           </p>
-        )}
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="mt-1 h-11 rounded-[6px] bg-signal px-5 text-[14px] font-semibold text-signal-ink transition-opacity hover:opacity-90"
-        >
-          Reload
-        </button>
+          <p className="mt-3 max-w-[52ch] text-[13px] leading-relaxed text-muted">
+            Reload to try again. If it keeps happening, the problem is on our
+            side — nothing you did caused it.
+          </p>
+          {this.state.message && (
+            <p className="num mt-4 break-words border border-line bg-field-deep px-3 py-2 text-[11px] text-muted">
+              {this.state.message}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="btn btn-primary mt-5 h-11"
+          >
+            Reload
+          </button>
+        </div>
       </div>
     );
   }

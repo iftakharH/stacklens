@@ -29,8 +29,10 @@ const GitHubMark: React.FC = () => (
   </svg>
 );
 
-// The two sign-in paths, shared by the landing page panel and the app dialog.
-// `idPrefix` keeps DOM ids unique when both are mounted.
+/**
+ * The two sign-in paths, shared by the landing page panel and the app dialog.
+ * `idPrefix` keeps DOM ids unique when both are mounted.
+ */
 const SignInMethods: React.FC<{ idPrefix?: string }> = ({
   idPrefix = 'signin',
 }) => {
@@ -76,16 +78,19 @@ const SignInMethods: React.FC<{ idPrefix?: string }> = ({
         onClick={() => {
           void handleGithub();
         }}
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-ink text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
+        className="btn h-11 w-full border-ink bg-ink text-field hover:bg-plate hover:text-ink"
       >
         <GitHubMark />
         Sign in with GitHub
       </button>
 
-      <form
-        onSubmit={handleMagicLink}
-        className="mt-3 flex flex-col gap-2 sm:flex-row"
-      >
+      <div className="my-4 flex items-center gap-3" aria-hidden="true">
+        <div className="ticks-x-subtle flex-1" />
+        <span className="rail-sm text-muted">or by email</span>
+        <div className="ticks-x-subtle flex-1" />
+      </div>
+
+      <form onSubmit={handleMagicLink} className="flex flex-col gap-2">
         <label htmlFor={`${idPrefix}-email`} className="sr-only">
           Email address
         </label>
@@ -96,19 +101,19 @@ const SignInMethods: React.FC<{ idPrefix?: string }> = ({
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@company.com"
           autoComplete="email"
-          className="h-11 min-w-0 flex-1 rounded-[6px] border border-line bg-paper px-3 text-[14px] text-ink placeholder:text-muted"
+          className="field-input h-11 text-[13px]"
         />
         <button
           type="submit"
           disabled={send.status === 'sending'}
-          className="h-11 shrink-0 rounded-[6px] border border-line px-4 text-[13px] font-semibold text-ink transition-colors hover:border-signal disabled:opacity-60"
+          className="btn h-11 w-full"
         >
           {send.status === 'sending' ? 'Sending…' : 'Email me a link'}
         </button>
       </form>
 
       {send.status === 'sent' && (
-        <p className="mt-3 text-[13px] text-muted" role="status">
+        <p className="mt-3 border-l border-signal pl-3 text-[13px] text-ink2" role="status">
           Check your inbox for the sign-in link.
         </p>
       )}

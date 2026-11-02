@@ -37,6 +37,13 @@ function startMockGitHubServer() {
           { "x-ratelimit-remaining": "0", "retry-after": "42" }
         );
       }
+      if (name === "abuse_ratelimited") {
+        return send(
+          429,
+          { message: "You have exceeded a secondary rate limit." },
+          { "retry-after": "30" }
+        );
+      }
       if (name === "broken") return send(500, { message: "Server Error" });
       const userFile = path.join(GITHUB_DIR, `${name}_user.json`);
       if (!existsSync(userFile)) return send(404, { message: "Not Found" });
@@ -224,6 +231,17 @@ describe("upstream GitHub errors", () => {
     expect(res.body.error.status).toBe(429);
     expect(res.body.error.message).toContain("rate limit");
     expect(res.headers["retry-after"]).toBe("42");
+  });
+
+  it("maps a GitHub abuse 429 to 429 RATE_LIMITED with Retry-After", async () => {
+    const res = await request(app)
+      .get("/api/analyze")
+      .query({ q: "abuse_ratelimited" });
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe("RATE_LIMITED");
+    expect(res.body.error.retryable).toBe(true);
+    expect(res.body.error.status).toBe(429);
+    expect(res.headers["retry-after"]).toBe("30");
   });
 
   it("maps a GitHub 500 to 502 UPSTREAM_ERROR", async () => {

@@ -28,8 +28,9 @@ describe("extractUsernameFromUrl", () => {
     expect(extractUsernameFromUrl("github.com/octocat")).toBe("octocat");
   });
 
-  it("keeps current last-segment behavior for scheme-less repo paths", () => {
-    expect(extractUsernameFromUrl("github.com/user/repo")).toBe("repo");
+  it("resolves a scheme-less repo paste to its owner", () => {
+    expect(extractUsernameFromUrl("github.com/user/repo")).toBe("user");
+    expect(extractUsernameFromUrl("torvalds/linux")).toBe("torvalds");
   });
 
   it("falls back to the first segment for non-github URLs", () => {

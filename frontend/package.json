@@ -13,7 +13,6 @@
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource-variable/martian-mono": "^5.3.0",
     "@sentry/react": "^10.74.0",
-    "@tailwindcss/postcss": "^4.2.1",
     "better-auth": "^1.7.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

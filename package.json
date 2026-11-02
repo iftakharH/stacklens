@@ -16,7 +16,7 @@
     "lint": "eslint ."
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "repository": {
     "type": "git",

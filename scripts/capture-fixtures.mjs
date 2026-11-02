@@ -8,13 +8,18 @@ const ROOT = path.resolve(__dirname, "..");
 const PROFILES = ["octocat", "torvalds", "gaearon", "sindresorhus"];
 const FIXTURES_DIR = path.join(ROOT, "test", "fixtures", "github");
 
+// Deliberately narrow .env import: the whole secret surface (DATABASE_URL,
+// Resend keys, OAuth secrets) must never be pulled into a fixture-capture
+// process just to find the GitHub token.
+const ENV_KEYS = ["GITHUB_TOKEN", "GITHUB_API_BASE"];
+
 const envPath = path.join(ROOT, ".env");
 if (existsSync(envPath)) {
   for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
     if (!match) continue;
     const [, key, value] = match;
-    if (process.env[key] === undefined) {
+    if (ENV_KEYS.includes(key) && process.env[key] === undefined) {
       process.env[key] = value.replace(/^["']|["']$/g, "");
     }
   }

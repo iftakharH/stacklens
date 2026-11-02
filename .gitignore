@@ -1,20 +1,33 @@
 node_modules/
-.env
-.env.local
-.env.*.local
 dist
 dist-ssr
 build
 out
+coverage/
+.nyc_output/
+
 test-results/
 playwright-report/
 .vercel
+
+# Env files — .env.example is shared on purpose, everything else is local only.
+.env
+.env.local
+.env.*.local
+.env*
+!.env.example
+!frontend/.env.example
+.magic-links.log
+
+# Logs
 *.log
 logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# OS / editor
 .DS_Store
 Thumbs.db
 .vscode/*
@@ -25,9 +38,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
-coverage/
-.nyc_output/
 
-.vercel
-.env*
-.magic-links.log
+# Agent/tooling artifacts (session-generated, never project source)
+.impeccable/
+.playwright-mcp/

@@ -39,11 +39,15 @@ export default defineConfig({
   testIgnore: /prod-smoke\.spec\.ts/,
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0,
   reporter: 'list',
   timeout: 120_000,
   expect: { timeout: 10_000 },
-  use: { baseURL: 'http://localhost:5173' },
+  use: {
+    baseURL: 'http://localhost:5173',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {

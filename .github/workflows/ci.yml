@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint, build, and test (Node 20 + Postgres 16)
+    name: Lint, build, and test (Node 24 + Postgres 16)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -33,16 +33,17 @@ jobs:
     env:
       NODE_ENV: test
       # Real Postgres service container -> the DB-gated integration suites
-      # run too (all 144 tests), not just the zero-env ones.
+      # run too (all tests), not just the zero-env ones.
       TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      VITE_SENTRY_DSN: ""
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Node 20 with npm cache
+      - name: Set up Node 24 with npm cache
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -64,20 +65,71 @@ jobs:
         run: npm --prefix frontend run build
 
       - name: Run all tests (unit + integration, real Postgres)
-        run: npm test
+        run: npm test 2>&1 | tee test-output.log
+
+      # The DB-gated suites skip silently without a database. CI has one, so
+      # any skipped test here means a broken/renamed gate — fail on it instead
+      # of drifting toward green-on-shrinking-coverage.
+      - name: Fail if any test was skipped
+        if: always()
+        run: |
+          if grep -Eq "^[[:space:]]*[0-9]*[1-9][0-9]* skipped" test-output.log; then
+            echo "::error::CI ran with skipped tests — the Postgres gate may be broken."
+            grep -E "skipped" test-output.log || true
+            exit 1
+          fi
+          echo "No tests skipped."
+
+  dependencies:
+    name: Dependency audit (high or critical = red)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Audit root dependencies
+        run: npm audit --audit-level=high
+
+      - name: Audit frontend dependencies
+        run: npm --prefix frontend audit --audit-level=high
 
   e2e:
     name: E2E (dev server + production-build smoke)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Enables the signed-in e2e specs (share, history, candidates, session).
+      E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Node 20 with npm cache
+      - name: Set up Node 24 with npm cache
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -89,18 +141,31 @@ jobs:
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
 
+      - name: Apply database migrations for the e2e database
+        run: npm run migrate
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Dev-server E2E (zero-env, mock GitHub)
+      - name: Dev-server E2E (mock GitHub, real test Postgres)
         run: npm run test:e2e
 
       - name: Production-build smoke (vite preview + same-origin /api proxy)
         run: npm run test:e2e:prod
 
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: test-results/
+          retention-days: 7
+
   migrate:
     name: Apply database migrations (main only)
-    needs: quality
+    needs: [quality, dependencies, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -108,21 +173,24 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Node 20 with npm cache
+      - name: Set up Node 24 with npm cache
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install root dependencies
         run: npm ci
 
-      - name: Run migrations (skips cleanly without DATABASE_URL)
+      - name: Run migrations (fail closed — a silent skip hides schema drift)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
-            echo "DATABASE_URL secret not set — skipping migration."
-            exit 0
+            echo "::error title=Migrations failed::DATABASE_URL secret is not set on this repository."
+            echo "main was pushed to production without a migration run. Set the"
+            echo "DATABASE_URL secret, or remove the migrate job if the project no"
+            echo "longer uses a database."
+            exit 1
           fi
           node db/migrate.js

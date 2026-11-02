@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # Graceful skip: stays green (exit 0) until the user configures secrets.
+      # Scheduled runs fail LOUD when unconfigured (a green X-hiding skip once
+      # meant a week without backups). Manual dispatch still allows setup
+      # probing via success:false configured=false + exit 0.
       - name: Check backup configuration
         id: check
         env:
@@ -23,25 +25,33 @@ jobs:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          TRIGGERED_BY_SCHEDULE: ${{ github.event_name == 'schedule' }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
-            echo "::notice::DATABASE_URL secret not set — skipping backup."
-            exit 0
+            echo "::error title=Backup not configured::DATABASE_URL secret is not set."
+            echo "Backups cannot run. Set DATABASE_URL (and the three R2 secrets)"
+            echo "or remove .github/workflows/backup.yml."
+            [ "$TRIGGERED_BY_SCHEDULE" = "true" ] && exit 1 || true
           fi
           if [ -z "$R2_ENDPOINT" ] || [ -z "$R2_ACCESS_KEY_ID" ] || [ -z "$R2_SECRET_ACCESS_KEY" ]; then
-            echo "::notice::R2 secrets (R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY) not all set — skipping backup."
-            exit 0
+            echo "::error title=Backup not configured::R2 secrets not all set (R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY)."
+            echo "Backups cannot run. Set all three R2 secrets or remove this workflow."
+            [ "$TRIGGERED_BY_SCHEDULE" = "true" ] && exit 1 || true
           fi
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
-      - name: Ensure pg_dump is available
+      - name: Ensure pg_dump 16 is available (pinned to the server major)
         if: steps.check.outputs.configured == 'true'
         run: |
-          if ! command -v pg_dump >/dev/null 2>&1; then
+          if ! pg_dump --version 2>/dev/null | grep -q "16\."; then
             sudo apt-get update
-            sudo apt-get install -y --no-install-recommends postgresql-client
+            sudo apt-get install -y --no-install-recommends postgresql-client-16
           fi
-          pg_dump --version
+          echo "pg_dump: $(pg_dump --version)"
+          pg_dump --version | grep -q "16\." || {
+            echo "::error::pg_dump major does not match the Postgres 16 server — dump/restore compatibility unverified."
+            exit 1
+          }
 
       # rclone ships on GitHub's Ubuntu runners; install from apt as a fallback.
       - name: Ensure rclone is available

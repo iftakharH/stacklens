@@ -26,7 +26,7 @@ StackLens is a complete, self-hostable tool, deliberately small. Out of scope by
 | Layer | Technology |
 | ----- | ---------- |
 | Frontend | React 19, TypeScript 5.9, Vite 8, Tailwind CSS 3.4, react-router 7. Self-hosted variable fonts (Archivo, Martian Mono) via `@fontsource-variable`; design tokens in `frontend/src/index.css` and `frontend/tailwind.config.js`. |
-| Backend | Node 24+, Express 5 (CommonJS), deployed as a single Vercel serverless function (`api/index.js`, `maxDuration 60`). |
+| Backend | Node 24+, Express 5 (CommonJS), deployed as a single Vercel serverless function (`api/index.js`, `maxDuration 60`). Feature routers (`lib/routes-*.js`) are mounted by the app — nothing under `api/` except the entry itself is deployable. |
 | Data | PostgreSQL (Neon) via `pg`, no ORM. Migrations are plain SQL in `db/migrations/`, applied by `npm run migrate`. |
 | Auth | Better Auth 1.7 with database sessions: GitHub OAuth + email magic link (Resend). Entirely env-gated; without config the app still boots and `/api/auth/*` returns `503 CONFIG_MISSING`. |
 | Rate limiting | In-memory by default, Upstash Redis when configured: 10/min anonymous and 100/min authenticated on `/api/*`; 30/min on mutating auth endpoints only (session reads are never limited). |
@@ -38,7 +38,9 @@ System design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Operations runbook:
 
 ```text
 stacklens/
-├── api/          # Express app and routers: index, candidates, history, share
+├── api/          # Single serverless function: Express app (api/index.js)
+│                 #   feature routers live in lib/routes-*.js so no bare
+│                 #   Router is ever deployed as a standalone function
 ├── lib/          # Engine and infrastructure: report, github, auth, db, errors,
 │                 #   rateLimit, validation, session, reportStore
 ├── db/           # migrate.js + plain-SQL migrations

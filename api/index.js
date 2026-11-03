@@ -10,9 +10,9 @@ const { persistReport } = require("../lib/reportStore");
 const { parseAnalyzeQuery } = require("../lib/validation");
 const { fetchUser, fetchAllRepos } = require("../lib/github");
 const { computeReport } = require("../lib/report");
-const candidatesRouter = require("./candidates");
-const historyRouter = require("./history");
-const shareRouter = require("./share");
+const candidatesRouter = require("../lib/routes-candidates");
+const historyRouter = require("../lib/routes-history");
+const shareRouter = require("../lib/routes-share");
 
 // Optional error tracking: enabled only when SENTRY_DSN is configured, and
 // the SDK is not even loaded otherwise, so zero-env boots are unaffected.
